@@ -3,12 +3,14 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Check, ChevronDown, LayoutGrid } from 'lucide-react'
 import { demoRegistry } from '@/demos/registry'
 import { useDemoStore } from '@/store/demoStore'
+import { useViewStore } from '@/store/viewStore'
 
 export function DemoSelector() {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const currentDemoId = useDemoStore((s) => s.currentDemoId)
   const loadDemo = useDemoStore((s) => s.loadDemo)
+  const setView = useViewStore((s) => s.setView)
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -46,6 +48,7 @@ export function DemoSelector() {
                 key={demo.id}
                 onClick={() => {
                   loadDemo(demo.id)
+                  setView('demo')
                   setOpen(false)
                 }}
                 className={`flex w-full items-start gap-2 rounded-lg px-2.5 py-2.5 text-left transition hover:bg-white/8 ${

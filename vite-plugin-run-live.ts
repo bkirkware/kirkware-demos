@@ -1,5 +1,6 @@
 import type { Plugin } from 'vite'
 import { exec } from 'node:child_process'
+import { loadDotEnvForShell } from './env-file-utils.ts'
 
 /**
  * Dev-server-only endpoint that executes a fixed, hardcoded shell command
@@ -8,6 +9,11 @@ import { exec } from 'node:child_process'
  * arbitrary remote code execution. Only wired up under `vite dev`, and only
  * reachable when the dev server is bound to localhost (the default; do not
  * run this with `--host` on an untrusted network).
+ *
+ * The project's .env file (managed by the Settings screen) is re-read and
+ * merged into every command's environment on every run, so editing and
+ * saving Settings takes effect immediately without restarting the dev
+ * server.
  *
  * A handful of commands populate `capturedEnv` (see `captures` below) —
  * credentials pulled from a real `cf service-key` response — which is then
@@ -40,6 +46,16 @@ function captureServiceKeyCredentials(stdout: string): Record<string, string> | 
   }
 }
 
+const ENV_CHECK_SCRIPT = [
+  'set -a',
+  'source .env 2>/dev/null',
+  'set +a',
+  "while IFS='=' read -r key _; do",
+  '  case "$key" in \'\'|\'#\'*) continue;; esac',
+  '  echo "$key=${!key}"',
+  'done < .env',
+].join('\n')
+
 const ALLOWED_COMMANDS: Record<string, CommandDef> = {
   'marketplace.sh': { command: 'cf marketplace -e ai-models' },
   'service-key.sh': {
@@ -50,6 +66,8 @@ const ALLOWED_COMMANDS: Record<string, CommandDef> = {
     command: 'curl -sS -H "Authorization: Bearer $API_KEY" "$OPENAI_API_BASE/v1/models"',
     requiredEnv: ['API_KEY', 'OPENAI_API_BASE'],
   },
+  'env-check.sh': { command: ENV_CHECK_SCRIPT },
+  'cf-target.sh': { command: 'cf target -o "$CF_ORG" -s "$CF_SPACE"' },
 }
 
 const TIMEOUT_MS = 20_000
@@ -105,7 +123,7 @@ export function runLivePlugin(): Plugin {
 
           exec(
             def.command,
-            { timeout: TIMEOUT_MS, shell: '/bin/bash', env: { ...process.env, ...capturedEnv } },
+            { timeout: TIMEOUT_MS, shell: '/bin/bash', env: { ...process.env, ...loadDotEnvForShell(), ...capturedEnv } },
             (error, rawStdout, stderr) => {
               let stdout = rawStdout
               let capturedVars: string[] | undefined

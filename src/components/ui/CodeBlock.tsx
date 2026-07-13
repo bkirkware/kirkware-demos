@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Highlight, themes } from 'prism-react-renderer'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Copy, Loader2, Play, Terminal, Zap } from 'lucide-react'
 import type { CommandBlock } from '@/types/demo'
+import { useEnvVarsStore } from '@/store/envVarsStore'
+import { findVarMatches, splitTokenByMatches } from '@/lib/envVarTokens'
+import { VariableHover } from './VariableHover'
 
 interface LiveResult {
   stdout: string
@@ -18,6 +21,8 @@ export function CodeBlock({ block }: { block: CommandBlock }) {
   const [liveRunning, setLiveRunning] = useState(false)
   const [liveResult, setLiveResult] = useState<LiveResult | null>(null)
   const [liveError, setLiveError] = useState<string | null>(null)
+  const envVars = useEnvVarsStore((s) => s.vars)
+  const knownVarNames = useMemo(() => new Set(Object.keys(envVars)), [envVars])
 
   async function handleCopy() {
     await navigator.clipboard.writeText(block.code)
@@ -92,13 +97,35 @@ export function CodeBlock({ block }: { block: CommandBlock }) {
             className={`${className} overflow-x-auto px-4 py-3 text-[13px] leading-relaxed`}
             style={{ ...style, background: 'transparent' }}
           >
-            {tokens.map((line, i) => (
-              <div key={i} {...getLineProps({ line })}>
-                {line.map((token, key) => (
-                  <span key={key} {...getTokenProps({ token })} />
-                ))}
-              </div>
-            ))}
+            {tokens.map((line, i) => {
+              const lineText = line.map((t) => t.content).join('')
+              const matches = findVarMatches(lineText, knownVarNames)
+              let pos = 0
+              return (
+                <div key={i} {...getLineProps({ line })}>
+                  {line.map((token, key) => {
+                    const tokenProps = getTokenProps({ token })
+                    const tokenStart = pos
+                    pos += token.content.length
+                    const segments = splitTokenByMatches(tokenStart, token.content, matches)
+                    if (segments.length === 1 && segments[0].varName === undefined) {
+                      return <span key={key} {...tokenProps} />
+                    }
+                    return (
+                      <span key={key} className={tokenProps.className} style={tokenProps.style}>
+                        {segments.map((seg, si) =>
+                          seg.varName ? (
+                            <VariableHover key={si} text={seg.text} varName={seg.varName} />
+                          ) : (
+                            <span key={si}>{seg.text}</span>
+                          ),
+                        )}
+                      </span>
+                    )
+                  })}
+                </div>
+              )
+            })}
           </pre>
         )}
       </Highlight>

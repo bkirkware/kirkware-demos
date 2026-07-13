@@ -89,7 +89,7 @@ export const securitySteps: DemoStep[] = [
     title: 'Audit & metrics',
     heading: 'Step 6 — everything is logged and metered centrally',
     diagramId: 'mcp-gateway-security',
-    narrative: 'Regardless of auth mode, every MCP call emits structured audit events and Prometheus metrics, surfaced in Tanzu Hub\'s "MCP Gateway Usage" dashboard.',
+    narrative: 'Regardless of auth mode, every MCP call emits structured audit events and Prometheus metrics, surfaced in Tanzu Hub\'s "MCP Gateway Usage" dashboard. Navigate to Hub\'s [Service Offerings]($HUB_URL/hub/marketplace/service-offerings), select MCP Gateway, choose the Usage tab.',
     visibleNodeIds: ['agent', 'mcp-gateway', 'onplat', 'copilot', 'figma', 'ghe', 'sso', 'hub'],
     visibleEdgeIds: ['e-agent-gw', 'e-gw-onplat', 'e-gw-copilot', 'e-gw-figma', 'e-gw-ghe', 'e-ghe-sso', 'e-gw-hub'],
     activeNodeIds: ['hub'],

@@ -1,9 +1,13 @@
 import { useEffect } from 'react'
 import { useDemoStore } from '@/store/demoStore'
+import { useViewStore } from '@/store/viewStore'
+import { useEnvVarsStore } from '@/store/envVarsStore'
 import { demoRegistry } from '@/demos/registry'
 import { TopBar } from '@/components/layout/TopBar'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { ContentPanel } from '@/components/layout/ContentPanel'
+import { SettingsView } from '@/components/settings/SettingsView'
+import { SandboxView } from '@/components/sandbox/SandboxView'
 
 function App() {
   const currentDemo = useDemoStore((s) => s.currentDemo)
@@ -12,13 +16,19 @@ function App() {
   const loadDemo = useDemoStore((s) => s.loadDemo)
   const next = useDemoStore((s) => s.next)
   const prev = useDemoStore((s) => s.prev)
+  const view = useViewStore((s) => s.view)
 
   useEffect(() => {
     if (demoRegistry[0]) loadDemo(demoRegistry[0].id)
   }, [loadDemo])
 
   useEffect(() => {
+    useEnvVarsStore.getState().refresh()
+  }, [])
+
+  useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      if (useViewStore.getState().view !== 'demo') return
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
@@ -37,10 +47,16 @@ function App() {
     <div className="bg-app-grid flex h-screen flex-col">
       <TopBar />
       <div className="flex min-h-0 flex-1">
-        <Sidebar />
-        <ContentPanel />
+        {view === 'demo' && (
+          <>
+            <Sidebar />
+            <ContentPanel />
+          </>
+        )}
+        {view === 'settings' && <SettingsView />}
+        {view === 'sandbox' && <SandboxView />}
       </div>
-      {isLoading && !currentDemo && (
+      {isLoading && !currentDemo && view === 'demo' && (
         <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
           Loading demo…
         </div>

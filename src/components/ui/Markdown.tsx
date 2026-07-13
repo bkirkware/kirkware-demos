@@ -1,6 +1,12 @@
+import { useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
+import { useEnvVarsStore } from '@/store/envVarsStore'
+import { interpolateEnvVars } from '@/lib/envVarTokens'
 
 export function Markdown({ children, className }: { children: string; className?: string }) {
+  const envVars = useEnvVarsStore((s) => s.vars)
+  const resolved = useMemo(() => interpolateEnvVars(children, envVars), [children, envVars])
+
   return (
     <div className={`prose-demo ${className ?? ''}`}>
       <ReactMarkdown
@@ -31,7 +37,7 @@ export function Markdown({ children, className }: { children: string; className?
           h3: ({ children }) => <h3 className="mb-2 text-lg font-semibold text-slate-100">{children}</h3>,
         }}
       >
-        {children}
+        {resolved}
       </ReactMarkdown>
     </div>
   )
