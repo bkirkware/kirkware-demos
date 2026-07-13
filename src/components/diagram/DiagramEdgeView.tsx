@@ -16,6 +16,7 @@ export function DiagramEdgeView({
   const { path, midpoint } = computeEdgeGeometry(source, target)
   const stroke = active ? '#22d3ee' : 'rgba(148,163,184,0.55)'
   const markerId = `arrow-${edge.id}`
+  const hasDash = edge.dashed || edge.animated
 
   return (
     <g>
@@ -33,18 +34,40 @@ export function DiagramEdgeView({
           <path d="M 0 1 L 10 5 L 0 9 z" fill={stroke} />
         </marker>
       </defs>
-      <motion.path
-        d={path}
-        fill="none"
-        stroke={stroke}
-        strokeWidth={active ? 2.75 : 2}
-        strokeDasharray={edge.dashed || edge.animated ? '7 7' : undefined}
-        markerEnd={`url(#${markerId})`}
-        style={edge.animated ? { animation: 'dash-flow 1.1s linear infinite' } : undefined}
-        initial={{ pathLength: 0, opacity: 0 }}
-        animate={{ pathLength: 1, opacity: 1 }}
-        transition={{ duration: 0.55, ease: 'easeInOut' }}
-      />
+      {/*
+        Framer Motion's `pathLength` animation drives stroke-dasharray/dashoffset
+        via inline styles under the hood — animating it on a path that also has an
+        explicit dash pattern (and, for animated edges, a competing CSS keyframe
+        animation on the same properties) causes the two systems to fight over the
+        same style each frame, which shows up as flicker. So dashed/animated edges
+        only ever get a plain opacity fade-in; the drawing-in pathLength animation
+        is reserved for plain solid edges, which have no dasharray to conflict with.
+      */}
+      {hasDash ? (
+        <motion.path
+          d={path}
+          fill="none"
+          stroke={stroke}
+          strokeWidth={active ? 2.75 : 2}
+          strokeDasharray="7 7"
+          markerEnd={`url(#${markerId})`}
+          style={edge.animated ? { animation: 'dash-flow 1.1s linear infinite' } : undefined}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+        />
+      ) : (
+        <motion.path
+          d={path}
+          fill="none"
+          stroke={stroke}
+          strokeWidth={active ? 2.75 : 2}
+          markerEnd={`url(#${markerId})`}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: 1 }}
+          transition={{ duration: 0.55, ease: 'easeInOut' }}
+        />
+      )}
       {edge.label && (
         <motion.g
           initial={{ opacity: 0 }}
