@@ -12,7 +12,7 @@ export const systemArchitecture: DiagramDef = {
     {
       id: 'worker',
       label: 'Worker VM (dedicated per model instance)',
-      position: { x: 1120, y: 20 },
+      position: { x: 1200, y: 20 },
       size: { width: 340, height: 332 },
     },
   ],
@@ -21,11 +21,11 @@ export const systemArchitecture: DiagramDef = {
     { id: 'gorouter', label: 'gorouter', sublabel: 'Cloud Foundry routing tier', kind: 'gateway', icon: 'route', position: { x: 460, y: 340 } },
     { id: 'ai-server', label: 'ai-server', sublabel: 'controller job · inference proxy', kind: 'gateway', icon: 'workflow', position: { x: 800, y: 140 }, group: 'controller', width: 290 },
     { id: 'genai-broker', label: 'genai-broker', sublabel: 'controller job · CF service broker', kind: 'service', icon: 'git-branch', position: { x: 800, y: 460 }, group: 'controller', width: 290 },
-    { id: 'worker-nginx', label: 'nginx', sublabel: 'TLS termination', kind: 'service', icon: 'shield', position: { x: 1160, y: 60 }, group: 'worker' },
-    { id: 'worker-runtime', label: 'Ollama / vLLM', sublabel: 'model runtime process', kind: 'model', icon: 'bot', position: { x: 1160, y: 220 }, group: 'worker' },
-    { id: 'postgres', label: 'PostgreSQL', sublabel: 'config · audit · journal', kind: 'data', icon: 'database', position: { x: 1160, y: 460 } },
+    { id: 'worker-nginx', label: 'nginx', sublabel: 'TLS termination', kind: 'service', icon: 'shield', position: { x: 1240, y: 60 }, group: 'worker' },
+    { id: 'worker-runtime', label: 'Ollama / vLLM', sublabel: 'model runtime process', kind: 'model', icon: 'bot', position: { x: 1240, y: 220 }, group: 'worker' },
+    { id: 'postgres', label: 'PostgreSQL', sublabel: 'config · audit · journal', kind: 'data', icon: 'database', position: { x: 1240, y: 460 } },
     { id: 'bosh', label: 'BOSH Director', sublabel: 'provisions Worker VMs', kind: 'platform', icon: 'server', position: { x: 800, y: 680 } },
-    { id: 'external', label: 'Off-Platform Models', sublabel: 'OpenAI · Bedrock · Azure · Vertex · Anthropic', kind: 'external', icon: 'cloud', position: { x: 1540, y: 140 }, width: 300 },
+    { id: 'external', label: 'Off-Platform Models', sublabel: 'OpenAI · Bedrock · Azure · Vertex · Anthropic', kind: 'external', icon: 'cloud', position: { x: 1620, y: 680 }, width: 300 },
   ],
   edges: [
     { id: 'e-client-gorouter', source: 'client', target: 'gorouter', label: 'HTTPS request', animated: true },
@@ -35,7 +35,26 @@ export const systemArchitecture: DiagramDef = {
     { id: 'e-aiserver-nginx', source: 'ai-server', target: 'worker-nginx', label: 'port 9023', animated: true },
     { id: 'e-nginx-runtime', source: 'worker-nginx', target: 'worker-runtime', label: 'port 4000' },
     { id: 'e-aiserver-postgres', source: 'ai-server', target: 'postgres', label: 'config · audit · journal', dashed: true },
-    { id: 'e-aiserver-external', source: 'ai-server', target: 'external', label: 'off-platform proxy · HTTPS 443', animated: true },
+    {
+      id: 'e-aiserver-external',
+      source: 'ai-server',
+      target: 'external',
+      label: 'off-platform proxy · HTTPS 443',
+      animated: true,
+      // Forced elbow routing: leave ai-server's right edge, immediately drop
+      // straight down through the narrow clear corridor between genai-broker
+      // (to the left) and the Worker VM group (to the right), then sweep
+      // right into Off-Platform Models. A direct curve here — at any single
+      // exit side — is geometrically unable to avoid clipping one of those
+      // two boxes, since ai-server sits directly above one and directly
+      // left of the other.
+      sourceSide: 'right',
+      targetSide: 'left',
+      waypoints: [
+        { x: 1150, y: 186 },
+        { x: 1150, y: 726 },
+      ],
+    },
   ],
 }
 
@@ -44,8 +63,8 @@ export const gatewayWireFormat: DiagramDef = {
   nodes: [
     { id: 'client-openai', label: 'App (OpenAI SDK / curl)', kind: 'client', icon: 'braces', position: { x: 40, y: 40 }, width: 340 },
     { id: 'client-anthropic', label: 'App (Anthropic SDK)', kind: 'client', icon: 'braces', position: { x: 40, y: 280 }, width: 340 },
-    { id: 'wf-gateway', label: 'ai-server', sublabel: 'one gateway, per-plan wire contract', kind: 'gateway', icon: 'workflow', position: { x: 520, y: 160 }, width: 300 },
-    { id: 'wf-model', label: 'Backend Model', sublabel: 'vLLM · Ollama · off-platform', kind: 'model', icon: 'bot', position: { x: 980, y: 160 } },
+    { id: 'wf-gateway', label: 'ai-server', sublabel: 'one gateway, per-plan wire contract', kind: 'gateway', icon: 'workflow', position: { x: 660, y: 160 }, width: 300 },
+    { id: 'wf-model', label: 'Backend Model', sublabel: 'vLLM · Ollama · off-platform', kind: 'model', icon: 'bot', position: { x: 1240, y: 160 } },
   ],
   edges: [
     { id: 'e-openai-gw', source: 'client-openai', target: 'wf-gateway', label: '/openai/v1/chat/completions', animated: true },

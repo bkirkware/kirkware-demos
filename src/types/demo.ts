@@ -65,6 +65,13 @@ export interface CommandBlock {
   code: string
   /** Simulated terminal/API output shown once the command "runs" */
   output?: string
+  /**
+   * Opt this block into the "Run Live" button, which executes a real,
+   * server-side-allowlisted shell command via the dev server's /api/run-live
+   * endpoint and displays actual stdout/stderr. Must match a key in
+   * ALLOWED_COMMANDS in vite-plugin-run-live.ts — dev-server only.
+   */
+  liveId?: string
 }
 
 export interface CommandStep extends DemoStepBase {
@@ -99,6 +106,8 @@ export interface DiagramNodeDef {
   group?: string
 }
 
+export type DiagramSide = 'top' | 'bottom' | 'left' | 'right'
+
 export interface DiagramEdgeDef {
   id: string
   source: string
@@ -106,6 +115,11 @@ export interface DiagramEdgeDef {
   label?: string
   animated?: boolean
   dashed?: boolean
+  /** Force which side of the source/target the connector leaves/enters from, overriding auto-detection. Use to route an edge around an obstacle it would otherwise cut through. */
+  sourceSide?: DiagramSide
+  targetSide?: DiagramSide
+  /** Explicit intermediate points (diagram coordinate space) the connector must route through, for edges that need to dodge an obstacle no single curve can avoid. Rendered as a rounded elbow through source port -> waypoints -> target port. */
+  waypoints?: { x: number; y: number }[]
 }
 
 export interface DiagramGroupDef {

@@ -13,7 +13,7 @@ export function DiagramEdgeView({
   target: DiagramNodeDef
   active?: boolean
 }) {
-  const { path, midpoint } = computeEdgeGeometry(source, target)
+  const { path, midpoint } = computeEdgeGeometry(source, target, edge.sourceSide, edge.targetSide, edge.waypoints)
   const stroke = active ? '#22d3ee' : 'rgba(148,163,184,0.55)'
   const markerId = `arrow-${edge.id}`
   const hasDash = edge.dashed || edge.animated

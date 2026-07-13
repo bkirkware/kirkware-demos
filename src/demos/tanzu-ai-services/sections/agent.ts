@@ -28,11 +28,25 @@ export const agentSteps: DemoStep[] = [
       {
         label: 'setup',
         lang: 'bash',
-        code: `mkdir my-agent && cd my-agent
-# AGENTS.md:
-#   You are a helpful assistant. Answer questions concisely and accurately.
-
-cf push my-agent`,
+        code: `mkdir my-agent && cd my-agent`,
+      },
+      {
+        label: 'AGENTS.md',
+        lang: 'markdown',
+        code: `You are a helpful assistant. Answer questions concisely and accurately.`,
+      },
+      {
+        label: 'manifest.yml (optional)',
+        lang: 'yaml',
+        code: `applications:
+- name: my-agent
+  buildpacks:
+  - agent_buildpack`,
+      },
+      {
+        label: 'push',
+        lang: 'bash',
+        code: `cf push my-agent`,
         output: `Pushing app my-agent...
 Staging app and tracing logs...
    [APP] Agent started in degraded mode: no model bound yet

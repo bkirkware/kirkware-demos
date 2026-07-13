@@ -4,10 +4,11 @@ import { introSteps } from './sections/intro'
 import { architectureSteps } from './sections/architecture'
 import { gettingStartedSteps } from './sections/gettingStarted'
 import { gatewaySteps } from './sections/gateway'
+import { policiesSteps } from './sections/policies'
 import { agentSteps } from './sections/agent'
 import { securitySteps } from './sections/security'
 import { observabilitySteps } from './sections/observability'
-import { ragAndWrapupSteps } from './sections/ragAndWrapup'
+import { wrapupSteps } from './sections/wrapup'
 
 const demo: DemoDefinition = {
   meta: {
@@ -23,10 +24,11 @@ const demo: DemoDefinition = {
     ...architectureSteps,
     ...gettingStartedSteps,
     ...gatewaySteps,
+    ...policiesSteps,
     ...agentSteps,
     ...securitySteps,
     ...observabilitySteps,
-    ...ragAndWrapupSteps,
+    ...wrapupSteps,
   ],
 }
 

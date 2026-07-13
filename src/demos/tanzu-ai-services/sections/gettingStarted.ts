@@ -29,30 +29,37 @@ export const gettingStartedSteps: DemoStep[] = [
 service plan   description                                  free or paid
 all-models     Access to all configured models on the       free
                platform. Capabilities: chat, embedding, tools.`,
+        liveId: 'marketplace.sh',
       },
       {
         label: 'provision.sh',
         lang: 'bash',
-        code: `cf create-service ai-models all-models all-models
-cf create-service-key all-models all-models
-cf service-key all-models all-models`,
-        output: `Creating service instance all-models in org demo / space demo as admin...
+        code: `cf create-service ai-models kirkware-all-models kirkware-all-models
+cf create-service-key kirkware-all-models kirkware-all-models`,
+        output: `Creating service instance kirkware-all-models in org demo / space demo as admin...
 OK
 
-Creating service key all-models for service instance all-models as admin...
-OK
-
-Getting key all-models for service instance all-models as admin...
+Creating service key kirkware-all-models for service instance kirkware-all-models as admin...
+OK`,
+      },
+      {
+        label: 'service-key.sh',
+        lang: 'bash',
+        code: `cf service-key kirkware-all-models kirkware-all-models`,
+        output: `Getting key kirkware-all-models for service instance kirkware-all-models as admin...
 
 {
- "endpoint": {
-  "api_base": "https://genai-proxy.sys.demo.example.com/all-models",
-  "openai_api_base": "https://genai-proxy.sys.demo.example.com/all-models/openai",
-  "api_key": "eyJhbGciOiJIUzI1NiJ9...",
-  "config_url": "https://genai-proxy.sys.demo.example.com/all-models/config/v1/endpoint",
-  "name": "all-models"
- }
+  "credentials": {
+    "endpoint": {
+      "api_base": "https://genai-proxy.sys.demo.example.com/kirkware-all-models",
+      "openai_api_base": "https://genai-proxy.sys.demo.example.com/kirkware-all-models/openai",
+      "api_key": "eyJhbGciOiJIUzI1NiJ9...",
+      "config_url": "https://genai-proxy.sys.demo.example.com/kirkware-all-models/config/v1/endpoint",
+      "name": "kirkware-all-models"
+    }
+  }
 }`,
+        liveId: 'service-key.sh',
       },
     ],
     impact: 'No app was pushed. `cf service-key` alone hands back everything needed to call the model — `openai_api_base` and `api_key` — which is exactly what you would otherwise read out of `VCAP_SERVICES` inside a bound app.',
@@ -78,6 +85,7 @@ Getting key all-models for service instance all-models as admin...
     {"id": "gemini-2.0-flash-lite-001", "object": "model", "created": 1749551541179}
   ]
 }`,
+        liveId: 'list-models.sh',
       },
       {
         label: 'chat-completion.sh',
