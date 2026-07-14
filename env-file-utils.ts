@@ -89,3 +89,52 @@ export function loadDotEnvForShell(): Record<string, string> {
   }
   return out
 }
+
+export interface EnvProfile {
+  filename: string
+  label: string
+}
+
+const PROFILE_PREFIX = '.env-'
+
+/** Lists saved environment profiles (`.env-<name>` files) in the project root. */
+export function listEnvProfiles(): EnvProfile[] {
+  return fs
+    .readdirSync(process.cwd(), { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.startsWith(PROFILE_PREFIX) && entry.name !== PROFILE_PREFIX)
+    .map((entry) => ({ filename: entry.name, label: entry.name.slice(PROFILE_PREFIX.length) }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+}
+
+/** Sanitizes a value for safe use as a filename component. */
+function sanitizeFilenamePart(value: string): string {
+  return value.trim().replace(/[^A-Za-z0-9._-]/g, '-')
+}
+
+/**
+ * Writes `vars` to .env (same as a normal Settings save) and additionally
+ * snapshots that same content into `.env-<HUB_FQDN>`, using the HUB_FQDN
+ * value found in `vars` itself — so the profile name always matches what's
+ * actually being saved, not whatever happens to already be on disk.
+ */
+export function saveEnvProfile(vars: EnvVar[]): { ok: true; filename: string } | { ok: false; error: string } {
+  const hubFqdn = vars.find((v) => v.key === 'HUB_FQDN')?.value?.trim()
+  if (!hubFqdn) {
+    return { ok: false, error: 'HUB_FQDN must be set to save a named environment profile.' }
+  }
+  const saved = writeEnvFile(vars)
+  const filename = `${PROFILE_PREFIX}${sanitizeFilenamePart(hubFqdn)}`
+  fs.writeFileSync(path.resolve(process.cwd(), filename), serializeEnvContent(saved), 'utf-8')
+  return { ok: true, filename }
+}
+
+/** Copies a previously-saved profile's contents over .env. Rejects anything not in listEnvProfiles(). */
+export function activateEnvProfile(filename: string): { ok: true } | { ok: false; error: string } {
+  const known = listEnvProfiles().find((p) => p.filename === filename)
+  if (!known) {
+    return { ok: false, error: `Unknown environment profile: ${filename}` }
+  }
+  const content = fs.readFileSync(path.resolve(process.cwd(), known.filename), 'utf-8')
+  fs.writeFileSync(ENV_PATH, content, 'utf-8')
+  return { ok: true }
+}

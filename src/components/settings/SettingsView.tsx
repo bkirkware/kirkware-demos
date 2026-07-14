@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { AlertTriangle, CheckCircle2, Eye, EyeOff, Info, Loader2, Plus, Save, Trash2 } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Copy, Eye, EyeOff, Info, Loader2, Plus, Save, Trash2 } from 'lucide-react'
 import { useEnvVarsStore } from '@/store/envVarsStore'
+import { useEnvProfilesStore } from '@/store/envProfilesStore'
 
 interface EnvRow {
   id: number
@@ -26,7 +27,11 @@ export function SettingsView() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [savingAs, setSavingAs] = useState(false)
+  const [savedAsFilename, setSavedAsFilename] = useState<string | null>(null)
+  const [saveAsError, setSaveAsError] = useState<string | null>(null)
   const savedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savedAsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -50,6 +55,7 @@ export function SettingsView() {
     load()
     return () => {
       if (savedTimeout.current) clearTimeout(savedTimeout.current)
+      if (savedAsTimeout.current) clearTimeout(savedAsTimeout.current)
     }
   }, [])
 
@@ -102,6 +108,35 @@ export function SettingsView() {
       setError('Could not reach the local env-settings endpoint — is `npm run dev` running?')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleSaveAs() {
+    if (!canSave) return
+    setSavingAs(true)
+    setSaveAsError(null)
+    try {
+      const vars = rows.map((r) => ({ key: r.key.trim(), value: r.value, sensitive: r.sensitive }))
+      const res = await fetch('/api/env-profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save', vars }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.ok) {
+        setSaveAsError(data.error ?? `Save As failed (${res.status})`)
+        return
+      }
+      setSource('env')
+      setSavedAsFilename(data.filename)
+      if (savedAsTimeout.current) clearTimeout(savedAsTimeout.current)
+      savedAsTimeout.current = setTimeout(() => setSavedAsFilename(null), 3500)
+      useEnvVarsStore.getState().refresh()
+      useEnvProfilesStore.getState().refresh()
+    } catch {
+      setSaveAsError('Could not reach the local env-profiles endpoint — is `npm run dev` running?')
+    } finally {
+      setSavingAs(false)
     }
   }
 
@@ -230,7 +265,7 @@ export function SettingsView() {
         )}
 
         {!loading && (
-          <div className="mt-6 flex items-center gap-3">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
               onClick={handleSave}
               disabled={!canSave || saving}
@@ -240,9 +275,29 @@ export function SettingsView() {
               {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
               {saving ? 'Saving…' : 'Save'}
             </button>
+            <button
+              onClick={handleSaveAs}
+              disabled={!canSave || savingAs}
+              title="Save a named snapshot as .env-<HUB_FQDN>, switchable later from the top bar"
+              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+              type="button"
+            >
+              {savingAs ? <Loader2 size={15} className="animate-spin" /> : <Copy size={15} />}
+              {savingAs ? 'Saving…' : 'Save As'}
+            </button>
             {saved && (
               <span className="flex items-center gap-1.5 text-sm text-emerald-300">
                 <CheckCircle2 size={15} /> Saved to .env and env.masked
+              </span>
+            )}
+            {savedAsFilename && (
+              <span className="flex items-center gap-1.5 text-sm text-emerald-300">
+                <CheckCircle2 size={15} /> Saved as <code className="rounded bg-white/10 px-1 py-0.5 font-mono text-xs">{savedAsFilename}</code>
+              </span>
+            )}
+            {saveAsError && (
+              <span className="flex items-center gap-1.5 text-sm text-rose-300">
+                <AlertTriangle size={15} /> {saveAsError}
               </span>
             )}
           </div>
