@@ -3,6 +3,7 @@ import { useDemoStore } from '@/store/demoStore'
 import { useViewStore, type AppView } from '@/store/viewStore'
 import { useEnvVarsStore } from '@/store/envVarsStore'
 import { DemoSelector } from './DemoSelector'
+import { EnvProfileSelector } from './EnvProfileSelector'
 
 const NAV_ITEMS: { view: AppView; label: string; icon: typeof SettingsIcon }[] = [
   { view: 'settings', label: 'Settings', icon: SettingsIcon },
@@ -79,6 +80,7 @@ export function TopBar() {
             {label}
           </button>
         ))}
+        <EnvProfileSelector />
         <DemoSelector />
       </div>
     </header>

@@ -5,10 +5,11 @@ import path from 'node:path'
 import { runLivePlugin } from './vite-plugin-run-live.ts'
 import { envSettingsPlugin } from './vite-plugin-env-settings.ts'
 import { editScriptPlugin } from './vite-plugin-edit-script.ts'
+import { envProfilesPlugin } from './vite-plugin-env-profiles.ts'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), runLivePlugin(), envSettingsPlugin(), editScriptPlugin()],
+  plugins: [react(), tailwindcss(), runLivePlugin(), envSettingsPlugin(), editScriptPlugin(), envProfilesPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -16,10 +17,11 @@ export default defineConfig({
   },
   server: {
     watch: {
-      // .env: read directly by our own plugins (never via import.meta.env);
-      // Settings/live-run commands write to it as part of normal use, and
-      // Vite's default restart-on-.env-change would otherwise drop the
-      // browser's connection mid-request every time that happens.
+      // .env and .env-<profile> snapshots: read directly by our own plugins
+      // (never via import.meta.env); Settings/live-run/profile commands
+      // write to them as part of normal use, and Vite's default
+      // restart-on-env-file-change would otherwise drop the browser's
+      // connection mid-request every time that happens.
       //
       // src/demos: these are plain data modules (arrays of DemoStep
       // objects), not React components, so editing them has no HMR
@@ -31,7 +33,7 @@ export default defineConfig({
       // state without needing a reload, so watching these files buys
       // nothing but a jarring reset — a manual browser refresh still picks
       // up on-disk edits made outside the app.
-      ignored: ['**/.env', '**/src/demos/**'],
+      ignored: ['**/.env', '**/.env-*', '**/src/demos/**'],
     },
   },
 })
