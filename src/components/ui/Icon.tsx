@@ -30,6 +30,9 @@ import {
   Workflow,
   type LucideProps,
 } from 'lucide-react'
+import { SpringAiIcon } from './icons/SpringAiIcon'
+import { SpringLeafIcon } from './icons/SpringLeafIcon'
+import { TanzuIcon } from './icons/TanzuIcon'
 
 export const iconRegistry = {
   activity: Activity,
@@ -57,6 +60,9 @@ export const iconRegistry = {
   shield: Shield,
   'shield-check': ShieldCheck,
   sparkles: Sparkles,
+  'spring-ai': SpringAiIcon,
+  'spring-leaf': SpringLeafIcon,
+  tanzu: TanzuIcon,
   terminal: Terminal,
   users: Users,
   waypoints: Waypoints,
