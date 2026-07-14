@@ -1,6 +1,7 @@
-import { FlaskConical, Settings as SettingsIcon, Sparkles } from 'lucide-react'
+import { FlaskConical, Server, Settings as SettingsIcon, Sparkles } from 'lucide-react'
 import { useDemoStore } from '@/store/demoStore'
 import { useViewStore, type AppView } from '@/store/viewStore'
+import { useEnvVarsStore } from '@/store/envVarsStore'
 import { DemoSelector } from './DemoSelector'
 
 const NAV_ITEMS: { view: AppView; label: string; icon: typeof SettingsIcon }[] = [
@@ -8,11 +9,20 @@ const NAV_ITEMS: { view: AppView; label: string; icon: typeof SettingsIcon }[] =
   { view: 'sandbox', label: 'Sandbox', icon: FlaskConical },
 ]
 
+function displayValue(info: { value: string; sensitive: boolean } | undefined) {
+  if (!info) return null
+  if (info.sensitive) return '•••'
+  return info.value || '(empty)'
+}
+
 export function TopBar() {
   const demo = useDemoStore((s) => s.currentDemo)
   const stepIndex = useDemoStore((s) => s.currentStepIndex)
   const view = useViewStore((s) => s.view)
   const setView = useViewStore((s) => s.setView)
+  const envVars = useEnvVarsStore((s) => s.vars)
+  const cfOrg = displayValue(envVars.CF_ORG)
+  const cfSpace = displayValue(envVars.CF_SPACE)
 
   return (
     <header className="glass-panel relative z-30 flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-5">
@@ -39,6 +49,17 @@ export function TopBar() {
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
+        {(cfOrg || cfSpace) && (
+          <div
+            className="hidden items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-xs text-slate-400 sm:flex"
+            title="Current cf target (org / space)"
+          >
+            <Server size={13} className="text-slate-500" />
+            <span>{cfOrg ?? '—'}</span>
+            <span className="text-slate-600">/</span>
+            <span>{cfSpace ?? '—'}</span>
+          </div>
+        )}
         {view === 'demo' && demo && (
           <span className="hidden font-mono text-xs text-slate-500 sm:inline mr-2">
             Step {stepIndex + 1} / {demo.steps.length}
