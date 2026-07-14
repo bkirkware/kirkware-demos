@@ -20,7 +20,7 @@ export function CommandStepView({ step }: { step: CommandStep }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.08 * i, duration: 0.3 }}
           >
-            <CodeBlock block={block} />
+            <CodeBlock block={block} stepId={step.id} />
           </motion.div>
         ))}
       </div>
