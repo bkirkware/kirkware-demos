@@ -3,14 +3,19 @@ import { Zap } from 'lucide-react'
 import type { CommandStep } from '@/types/demo'
 import { Markdown } from '@/components/ui/Markdown'
 import { CodeBlock } from '@/components/ui/CodeBlock'
+import { EditableField } from '@/components/ui/EditableField'
 import { StepHeader } from './StepHeader'
 
 export function CommandStepView({ step }: { step: CommandStep }) {
   return (
     <div className="mx-auto h-full max-w-3xl overflow-y-auto px-12 py-12">
-      <StepHeader section={step.section} heading={step.heading} sourceUrl={step.sourceUrl} />
+      <StepHeader stepId={step.id} section={step.section} heading={step.heading} sourceUrl={step.sourceUrl} />
 
-      {step.description && <Markdown>{step.description}</Markdown>}
+      {step.description && (
+        <EditableField stepId={step.id} field="description" value={step.description} multiline>
+          {(v) => <Markdown>{v}</Markdown>}
+        </EditableField>
+      )}
 
       <div className="mt-5 space-y-4">
         {step.commands.map((block, i) => (
@@ -35,7 +40,9 @@ export function CommandStepView({ step }: { step: CommandStep }) {
           <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-emerald-300 uppercase">
             <Zap size={12} /> Impact
           </div>
-          <Markdown className="text-sm">{step.impact}</Markdown>
+          <EditableField stepId={step.id} field="impact" value={step.impact} multiline>
+            {(v) => <Markdown className="text-sm">{v}</Markdown>}
+          </EditableField>
         </motion.div>
       )}
     </div>

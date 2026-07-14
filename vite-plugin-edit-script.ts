@@ -1,13 +1,13 @@
 import type { Plugin } from 'vite'
-import { updateScriptCode } from './edit-script-utils.ts'
+import { updateScriptCode, updateStepField } from './edit-script-utils.ts'
 
 /**
- * Dev-server-only endpoint backing the in-line "Edit" button on command
- * blocks. Locates the exact `code` string for a given (stepId, label) pair
- * across every demo section file using the TypeScript compiler API — never
- * arbitrary file writes — and rewrites just that one template literal in
- * place, leaving the rest of the file untouched. Only wired up under
- * `vite dev`.
+ * Dev-server-only endpoint backing every in-line "Edit" affordance — command
+ * blocks (kind: 'script') as well as arbitrary text fields (kind: 'field').
+ * Locates the exact string for a given target across every demo section file
+ * using the TypeScript compiler API — never arbitrary file writes — and
+ * rewrites just that one template literal in place, leaving the rest of the
+ * file untouched. Only wired up under `vite dev`.
  */
 export function editScriptPlugin(): Plugin {
   return {
@@ -35,7 +35,28 @@ export function editScriptPlugin(): Plugin {
             return
           }
 
-          const { stepId, label, oldCode, newCode } = parsed as Record<string, unknown>
+          const { kind, stepId, label, oldCode, newCode, field, oldValue, newValue } = parsed as Record<string, unknown>
+
+          if (kind === 'field') {
+            if (
+              typeof stepId !== 'string' ||
+              typeof field !== 'string' ||
+              typeof oldValue !== 'string' ||
+              typeof newValue !== 'string'
+            ) {
+              res.statusCode = 400
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ ok: false, error: 'stepId, field, oldValue, and newValue must all be strings' }))
+              return
+            }
+
+            const result = updateStepField(stepId, field, oldValue, newValue)
+            res.statusCode = result.ok ? 200 : result.error?.includes('find') ? 404 : 409
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify(result))
+            return
+          }
+
           if (
             typeof stepId !== 'string' ||
             typeof label !== 'string' ||

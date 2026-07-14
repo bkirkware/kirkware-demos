@@ -4,6 +4,7 @@ import type { DiagramStep } from '@/types/demo'
 import { useDemoStore } from '@/store/demoStore'
 import { ArchitectureDiagram } from '@/components/diagram/ArchitectureDiagram'
 import { Markdown } from '@/components/ui/Markdown'
+import { EditableField } from '@/components/ui/EditableField'
 import { StepHeader } from './StepHeader'
 
 export function DiagramStepView({ step }: { step: DiagramStep }) {
@@ -12,7 +13,7 @@ export function DiagramStepView({ step }: { step: DiagramStep }) {
 
   return (
     <div className="flex h-full flex-col px-10 py-8">
-      <StepHeader section={step.section} heading={step.heading} sourceUrl={step.sourceUrl} />
+      <StepHeader stepId={step.id} section={step.section} heading={step.heading} sourceUrl={step.sourceUrl} />
 
       {step.narrative && (
         <motion.div
@@ -22,7 +23,9 @@ export function DiagramStepView({ step }: { step: DiagramStep }) {
           className="glass-panel mb-4 flex max-h-24 shrink-0 items-start gap-3 overflow-y-auto rounded-xl px-5 py-3.5"
         >
           <Info size={16} className="mt-0.5 shrink-0 text-cyan-300" />
-          <Markdown className="text-sm">{step.narrative}</Markdown>
+          <EditableField stepId={step.id} field="narrative" value={step.narrative} multiline className="min-w-0 flex-1">
+            {(v) => <Markdown className="text-sm">{v}</Markdown>}
+          </EditableField>
         </motion.div>
       )}
 

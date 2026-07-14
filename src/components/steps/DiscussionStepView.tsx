@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { MessageSquare } from 'lucide-react'
 import type { DiscussionStep } from '@/types/demo'
+import { EditableField } from '@/components/ui/EditableField'
 
 export function DiscussionStepView({ step }: { step: DiscussionStep }) {
   return (
@@ -17,14 +18,18 @@ export function DiscussionStepView({ step }: { step: DiscussionStep }) {
       <span className="relative z-10 mb-4 text-xs font-semibold tracking-widest text-cyan-400 uppercase">
         Pause &amp; discuss
       </span>
-      <motion.p
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.4 }}
-        className="relative z-10 max-w-2xl text-3xl font-semibold text-balance text-slate-100"
-      >
-        {step.prompt}
-      </motion.p>
+      <EditableField stepId={step.id} field="prompt" value={step.prompt} variant="inline" multiline className="relative z-10">
+        {(v) => (
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.4 }}
+            className="max-w-2xl text-3xl font-semibold text-balance text-slate-100"
+          >
+            {v}
+          </motion.p>
+        )}
+      </EditableField>
       {step.talkingPoints && (
         <motion.ul
           initial={{ opacity: 0 }}

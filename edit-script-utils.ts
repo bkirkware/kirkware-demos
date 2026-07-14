@@ -29,6 +29,22 @@ function findProp(obj: ts.ObjectLiteralExpression, name: string): ts.PropertyAss
   )
 }
 
+/** Resolves a dot-path like "callout.label" to the final PropertyAssignment, descending through nested object literals. */
+function findNestedProp(root: ts.ObjectLiteralExpression, pathParts: string[]): ts.PropertyAssignment | undefined {
+  let current = root
+  for (let i = 0; i < pathParts.length - 1; i++) {
+    const prop = findProp(current, pathParts[i])
+    if (!prop || !ts.isObjectLiteralExpression(prop.initializer)) return undefined
+    current = prop.initializer
+  }
+  return findProp(current, pathParts[pathParts.length - 1])
+}
+
+/** True for an object literal that looks like a DemoStep — every step type shares `id` + `type`. */
+function isStepObject(node: ts.Node): node is ts.ObjectLiteralExpression {
+  return ts.isObjectLiteralExpression(node) && Boolean(findProp(node, 'id')) && Boolean(findProp(node, 'type'))
+}
+
 /** Escapes text for safe embedding inside a new template literal. */
 function toTemplateLiteralSource(text: string): string {
   const escaped = text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${')
@@ -36,6 +52,14 @@ function toTemplateLiteralSource(text: string): string {
 }
 
 type EditOutcome = { status: 'updated'; filePath: string } | { status: 'stale' } | { status: 'not-found' }
+
+/** Splices `newValue` in as a template literal replacing `targetNode`'s span, and writes the file. */
+function applyEdit(filePath: string, source: string, sourceFile: ts.SourceFile, targetNode: ts.Expression, newValue: string): void {
+  const start = targetNode.getStart(sourceFile)
+  const end = targetNode.getEnd()
+  const updatedSource = source.slice(0, start) + toTemplateLiteralSource(newValue) + source.slice(end)
+  fs.writeFileSync(filePath, updatedSource, 'utf-8')
+}
 
 function tryUpdateInFile(filePath: string, stepId: string, label: string, oldCode: string, newCode: string): EditOutcome {
   const source = fs.readFileSync(filePath, 'utf-8')
@@ -80,10 +104,45 @@ function tryUpdateInFile(filePath: string, stepId: string, label: string, oldCod
     return { status: sawStale ? 'stale' : 'not-found' }
   }
 
-  const start = targetNode.getStart(sourceFile)
-  const end = targetNode.getEnd()
-  const updatedSource = source.slice(0, start) + toTemplateLiteralSource(newCode) + source.slice(end)
-  fs.writeFileSync(filePath, updatedSource, 'utf-8')
+  applyEdit(filePath, source, sourceFile, targetNode, newCode)
+  return { status: 'updated', filePath }
+}
+
+/** Finds a scalar text field (top-level, or a dot-path like "callout.label") on the step identified by `stepId`. */
+function tryUpdateFieldInFile(filePath: string, stepId: string, fieldPath: string, oldValue: string, newValue: string): EditOutcome {
+  const source = fs.readFileSync(filePath, 'utf-8')
+  const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true)
+  const pathParts = fieldPath.split('.')
+
+  let sawStale = false
+
+  function visit(node: ts.Node): ts.Expression | undefined {
+    if (isStepObject(node)) {
+      const idProp = findProp(node, 'id')!
+      const idValue = stringLikeValue(idProp.initializer)
+      if (idValue === stepId) {
+        const targetProp = findNestedProp(node, pathParts)
+        if (targetProp) {
+          const currentValue = stringLikeValue(targetProp.initializer)
+          if (currentValue !== null) {
+            if (currentValue.trim() === oldValue.trim()) {
+              return targetProp.initializer
+            }
+            sawStale = true
+          }
+        }
+        return undefined
+      }
+    }
+    return ts.forEachChild(node, visit)
+  }
+  const targetNode = visit(sourceFile)
+
+  if (!targetNode) {
+    return { status: sawStale ? 'stale' : 'not-found' }
+  }
+
+  applyEdit(filePath, source, sourceFile, targetNode, newValue)
   return { status: 'updated', filePath }
 }
 
@@ -113,4 +172,26 @@ export function updateScriptCode(stepId: string, label: string, oldCode: string,
     return { ok: false, error: 'The script on disk no longer matches what was displayed — reload and try again.' }
   }
   return { ok: false, error: `Could not find a "${label}" script on step "${stepId}"` }
+}
+
+/** Finds the scalar text field identified by (stepId, fieldPath) across every demo section file and rewrites it. */
+export function updateStepField(stepId: string, fieldPath: string, oldValue: string, newValue: string): EditScriptResult {
+  if (!stepId || !fieldPath) {
+    return { ok: false, error: 'stepId and field are required' }
+  }
+  const files = listDemoFiles(DEMOS_ROOT)
+  let sawStale = false
+  for (const file of files) {
+    const result = tryUpdateFieldInFile(file, stepId, fieldPath, oldValue, newValue)
+    if (result.status === 'updated') {
+      return { ok: true, filePath: path.relative(process.cwd(), result.filePath) }
+    }
+    if (result.status === 'stale') {
+      sawStale = true
+    }
+  }
+  if (sawStale) {
+    return { ok: false, error: 'The content on disk no longer matches what was displayed — reload and try again.' }
+  }
+  return { ok: false, error: `Could not find field "${fieldPath}" on step "${stepId}"` }
 }

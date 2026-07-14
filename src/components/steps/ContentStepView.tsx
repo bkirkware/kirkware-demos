@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import type { ContentStep } from '@/types/demo'
 import { Markdown } from '@/components/ui/Markdown'
 import { Icon } from '@/components/ui/Icon'
+import { EditableField } from '@/components/ui/EditableField'
 import { useEnvVarsStore } from '@/store/envVarsStore'
 import { interpolateEnvVars } from '@/lib/envVarTokens'
 import { StepHeader } from './StepHeader'
@@ -17,11 +18,13 @@ export function ContentStepView({ step }: { step: ContentStep }) {
 
   return (
     <div className="mx-auto h-full max-w-3xl overflow-y-auto px-12 py-12">
-      <StepHeader section={step.section} heading={step.heading} sourceUrl={step.sourceUrl} />
+      <StepHeader stepId={step.id} section={step.section} heading={step.heading} sourceUrl={step.sourceUrl} />
 
       {step.body && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-          <Markdown>{step.body}</Markdown>
+          <EditableField stepId={step.id} field="body" value={step.body} multiline>
+            {(v) => <Markdown>{v}</Markdown>}
+          </EditableField>
         </motion.div>
       )}
 
@@ -69,8 +72,12 @@ export function ContentStepView({ step }: { step: ContentStep }) {
           transition={{ delay: 0.2 }}
           className={`mt-6 rounded-xl border p-4 ${calloutTone[step.callout.tone ?? 'info']}`}
         >
-          <div className="mb-1 text-xs font-semibold tracking-wide uppercase opacity-80">{step.callout.label}</div>
-          <div className="text-sm leading-relaxed break-words">{step.callout.body}</div>
+          <EditableField stepId={step.id} field="callout.label" value={step.callout.label}>
+            {(v) => <div className="mb-1 text-xs font-semibold tracking-wide uppercase opacity-80">{v}</div>}
+          </EditableField>
+          <EditableField stepId={step.id} field="callout.body" value={step.callout.body} multiline>
+            {(v) => <div className="text-sm leading-relaxed break-words">{v}</div>}
+          </EditableField>
         </motion.div>
       )}
     </div>

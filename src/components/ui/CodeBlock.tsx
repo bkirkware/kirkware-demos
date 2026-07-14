@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { AlertTriangle, Check, Copy, Loader2, Pencil, Play, Terminal, X, Zap } from 'lucide-react'
 import type { CommandBlock } from '@/types/demo'
 import { useEnvVarsStore } from '@/store/envVarsStore'
+import { useEditModeStore } from '@/store/editModeStore'
 import { findVarMatches, splitTokenByMatches } from '@/lib/envVarTokens'
 import { VariableHover } from './VariableHover'
 
@@ -31,7 +32,8 @@ export function CodeBlock({ block, stepId }: { block: CommandBlock; stepId?: str
   const savedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const envVars = useEnvVarsStore((s) => s.vars)
   const knownVarNames = useMemo(() => new Set(Object.keys(envVars)), [envVars])
-  const canEdit = Boolean(stepId && block.label)
+  const editsEnabled = useEditModeStore((s) => s.enabled)
+  const canEdit = editsEnabled && Boolean(stepId && block.label)
 
   async function handleCopy() {
     await navigator.clipboard.writeText(currentCode)
@@ -86,7 +88,7 @@ export function CodeBlock({ block, stepId }: { block: CommandBlock; stepId?: str
       const res = await fetch('/api/edit-script', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stepId, label: block.label, oldCode: currentCode, newCode: editValue }),
+        body: JSON.stringify({ kind: 'script', stepId, label: block.label, oldCode: currentCode, newCode: editValue }),
       })
       const data = await res.json()
       if (!res.ok || !data.ok) {
