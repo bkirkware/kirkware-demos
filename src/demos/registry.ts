@@ -23,4 +23,11 @@ export const demoRegistry: DemoRegistryEntry[] = [
     tags: ['Spring', 'Tanzu Platform', 'Upgrades'],
     load: () => import('./application-advisor'),
   },
+  {
+    id: 'cf-coding-agents',
+    title: 'CF Coding Agents',
+    subtitle: 'Claude Code as a cf task — and swapping the model for on-platform Qwen with zero code changes',
+    tags: ['Agents', 'Tanzu Platform', 'Cloud Foundry'],
+    load: () => import('./cf-coding-agents'),
+  },
 ]

@@ -53,6 +53,22 @@ function captureServiceKeyCredentials(stdout: string): Record<string, string> | 
   }
 }
 
+function captureQwenServiceKeyCredentials(stdout: string): Record<string, string> | null {
+  const start = stdout.indexOf('{')
+  if (start === -1) return null
+  try {
+    const parsed = JSON.parse(stdout.slice(start))
+    const endpoint = parsed?.credentials?.endpoint
+    if (!endpoint) return null
+    const out: Record<string, string> = {}
+    if (endpoint.anthropic_api_base) out.QWEN_ANTHROPIC_BASE_URL = endpoint.anthropic_api_base
+    if (endpoint.api_key) out.QWEN_ANTHROPIC_API_KEY = endpoint.api_key
+    return Object.keys(out).length > 0 ? out : null
+  } catch {
+    return null
+  }
+}
+
 const SDK_LIST_JAVA_SCRIPT = ['source "$HOME/.sdkman/bin/sdkman-init.sh"', 'sdk list java'].join('\n')
 
 const ENV_CHECK_SCRIPT = [
@@ -92,6 +108,25 @@ const ALLOWED_COMMANDS: Record<string, CommandDef> = {
     command: 'cf space "$CF_SPACE" || cf create-space "$CF_SPACE" -o "$CF_ORG"',
   },
   'sdk-list-java.sh': { command: SDK_LIST_JAVA_SCRIPT },
+  'set-cf-space-coding-agents.sh': {
+    command: 'export CF_SPACE=coding-agents && echo $CF_SPACE',
+    envOverrides: { CF_SPACE: 'coding-agents' },
+  },
+  'set-cf-space-petclinic.sh': {
+    command: 'export CF_SPACE=petclinic && echo $CF_SPACE',
+    envOverrides: { CF_SPACE: 'petclinic' },
+  },
+  'cf-ensure-qwen-service.sh': {
+    command: 'cf service anthropic-qwen-model || cf create-service ai-models anthropic-qwen3.6 anthropic-qwen-model --wait',
+  },
+  'cf-ensure-qwen-service-key.sh': {
+    command:
+      'cf service-key anthropic-qwen-model anthropic-qwen-model-key >/dev/null 2>&1 || cf create-service-key anthropic-qwen-model anthropic-qwen-model-key',
+  },
+  'cf-show-qwen-service-key.sh': {
+    command: 'cf service-key anthropic-qwen-model anthropic-qwen-model-key',
+    captures: captureQwenServiceKeyCredentials,
+  },
 }
 
 const TIMEOUT_MS = 20_000
