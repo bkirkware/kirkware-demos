@@ -1,8 +1,25 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { Plus, X } from 'lucide-react'
 import type { TitleStep } from '@/types/demo'
 import { EditableField } from '@/components/ui/EditableField'
+import { useEditModeStore } from '@/store/editModeStore'
+import { addArrayItem, removeArrayItem } from '@/lib/arrayEdits'
 
 export function TitleStepView({ step }: { step: TitleStep }) {
+  const editsEnabled = useEditModeStore((s) => s.enabled)
+  const [bullets, setBullets] = useState(step.bullets ?? [])
+
+  async function handleAddBullet() {
+    const result = await addArrayItem(step.id, 'bullets', 'New item')
+    if (result.ok) setBullets((prev) => [...prev, 'New item'])
+  }
+
+  async function handleRemoveBullet(index: number, value: string) {
+    const result = await removeArrayItem(step.id, 'bullets', index, value)
+    if (result.ok) setBullets((prev) => prev.filter((_, i) => i !== index))
+  }
+
   return (
     <div className="flex h-full flex-col items-center justify-center px-16 text-center">
       {step.eyebrow && (
@@ -45,21 +62,37 @@ export function TitleStepView({ step }: { step: TitleStep }) {
           )}
         </EditableField>
       )}
-      {step.bullets && (
+      {(bullets.length > 0 || editsEnabled) && (
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
           className="mt-10 flex flex-wrap items-center justify-center gap-3"
         >
-          {step.bullets.map((b) => (
-            <span
-              key={b}
-              className="glass-panel rounded-full px-4 py-2 text-sm font-medium text-slate-300"
-            >
-              {b}
-            </span>
+          {bullets.map((b, i) => (
+            <div key={i} className="group relative">
+              <EditableField stepId={step.id} field={`bullets[${i}]`} value={b} variant="inline">
+                {(v) => <span className="glass-panel rounded-full px-4 py-2 text-sm font-medium text-slate-300">{v}</span>}
+              </EditableField>
+              {editsEnabled && (
+                <button
+                  onClick={() => handleRemoveBullet(i, b)}
+                  className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-400/20 text-rose-300 opacity-0 shadow transition group-hover:opacity-100 hover:bg-rose-400/30"
+                  title="Remove this item"
+                >
+                  <X size={9} />
+                </button>
+              )}
+            </div>
           ))}
+          {editsEnabled && (
+            <button
+              onClick={handleAddBullet}
+              className="flex items-center gap-1 rounded-full border border-dashed border-white/20 px-4 py-2 text-sm text-slate-500 transition hover:border-cyan-400/40 hover:text-cyan-300"
+            >
+              <Plus size={13} /> Add
+            </button>
+          )}
         </motion.div>
       )}
     </div>

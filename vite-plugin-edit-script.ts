@@ -1,5 +1,5 @@
 import type { Plugin } from 'vite'
-import { updateScriptCode, updateStepField } from './edit-script-utils.ts'
+import { addArrayItem, removeArrayItem, updateScriptCode, updateStepField } from './edit-script-utils.ts'
 
 /**
  * Dev-server-only endpoint backing every in-line "Edit" affordance — command
@@ -35,7 +35,49 @@ export function editScriptPlugin(): Plugin {
             return
           }
 
-          const { kind, stepId, label, oldCode, newCode, field, oldValue, newValue } = parsed as Record<string, unknown>
+          const { kind, stepId, label, oldCode, newCode, field, oldValue, newValue, item, index, compareField } =
+            parsed as Record<string, unknown>
+
+          if (kind === 'array-add') {
+            if (typeof stepId !== 'string' || typeof field !== 'string' || (typeof item !== 'string' && typeof item !== 'object')) {
+              res.statusCode = 400
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ ok: false, error: 'stepId and field must be strings, and item must be a string or object' }))
+              return
+            }
+
+            const result = addArrayItem(stepId, field, item)
+            res.statusCode = result.ok ? 200 : result.error?.includes('find') ? 404 : 409
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify(result))
+            return
+          }
+
+          if (kind === 'array-remove') {
+            if (
+              typeof stepId !== 'string' ||
+              typeof field !== 'string' ||
+              typeof index !== 'number' ||
+              typeof oldValue !== 'string' ||
+              (compareField !== null && compareField !== undefined && typeof compareField !== 'string')
+            ) {
+              res.statusCode = 400
+              res.setHeader('Content-Type', 'application/json')
+              res.end(
+                JSON.stringify({
+                  ok: false,
+                  error: 'stepId, field must be strings, index a number, oldValue a string, and compareField a string or null',
+                }),
+              )
+              return
+            }
+
+            const result = removeArrayItem(stepId, field, index, compareField ?? null, oldValue)
+            res.statusCode = result.ok ? 200 : result.error?.includes('find') ? 404 : 409
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify(result))
+            return
+          }
 
           if (kind === 'field') {
             if (

@@ -1,11 +1,25 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronDown, HelpCircle } from 'lucide-react'
+import { ChevronDown, HelpCircle, Plus, X } from 'lucide-react'
 import type { QuestionStep } from '@/types/demo'
 import { EditableField } from '@/components/ui/EditableField'
+import { useEditModeStore } from '@/store/editModeStore'
+import { addArrayItem, removeArrayItem } from '@/lib/arrayEdits'
 
 export function QuestionStepView({ step }: { step: QuestionStep }) {
   const [showHints, setShowHints] = useState(false)
+  const editsEnabled = useEditModeStore((s) => s.enabled)
+  const [hints, setHints] = useState(step.hints ?? [])
+
+  async function handleAddHint() {
+    const result = await addArrayItem(step.id, 'hints', 'New hint')
+    if (result.ok) setHints((prev) => [...prev, 'New hint'])
+  }
+
+  async function handleRemoveHint(index: number, value: string) {
+    const result = await removeArrayItem(step.id, 'hints', index, value)
+    if (result.ok) setHints((prev) => prev.filter((_, i) => i !== index))
+  }
 
   return (
     <div className="relative flex h-full flex-col items-center justify-center overflow-hidden px-16 text-center">
@@ -34,7 +48,7 @@ export function QuestionStepView({ step }: { step: QuestionStep }) {
         )}
       </EditableField>
 
-      {step.hints && (
+      {(hints.length > 0 || editsEnabled) && (
         <div className="relative z-10 mt-8">
           <button
             onClick={() => setShowHints((v) => !v)}
@@ -49,12 +63,33 @@ export function QuestionStepView({ step }: { step: QuestionStep }) {
               animate={{ opacity: 1, y: 0 }}
               className="mt-4 space-y-2 text-left"
             >
-              {step.hints.map((h) => (
-                <li key={h} className="flex items-start gap-2 text-sm text-slate-500">
+              {hints.map((h, i) => (
+                <li key={i} className="group flex items-start gap-2 text-sm text-slate-500">
                   <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />
-                  {h}
+                  <EditableField stepId={step.id} field={`hints[${i}]`} value={h} variant="inline">
+                    {(v) => <span>{v}</span>}
+                  </EditableField>
+                  {editsEnabled && (
+                    <button
+                      onClick={() => handleRemoveHint(i, h)}
+                      className="flex h-4 w-4 items-center justify-center rounded-full text-rose-300 opacity-0 transition group-hover:opacity-100 hover:bg-rose-400/20"
+                      title="Remove this item"
+                    >
+                      <X size={9} />
+                    </button>
+                  )}
                 </li>
               ))}
+              {editsEnabled && (
+                <li>
+                  <button
+                    onClick={handleAddHint}
+                    className="flex items-center gap-1.5 rounded-md px-1 py-1 text-sm text-slate-500 transition hover:text-amber-300"
+                  >
+                    <Plus size={13} /> Add hint
+                  </button>
+                </li>
+              )}
             </motion.ul>
           )}
         </div>

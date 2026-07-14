@@ -29,15 +29,70 @@ function findProp(obj: ts.ObjectLiteralExpression, name: string): ts.PropertyAss
   )
 }
 
-/** Resolves a dot-path like "callout.label" to the final PropertyAssignment, descending through nested object literals. */
-function findNestedProp(root: ts.ObjectLiteralExpression, pathParts: string[]): ts.PropertyAssignment | undefined {
-  let current = root
-  for (let i = 0; i < pathParts.length - 1; i++) {
-    const prop = findProp(current, pathParts[i])
-    if (!prop || !ts.isObjectLiteralExpression(prop.initializer)) return undefined
-    current = prop.initializer
+type PathSegment = { kind: 'prop'; name: string } | { kind: 'index'; index: number }
+
+/** Parses a path like "bullets[2].title" into [{prop:bullets}, {index:2}, {prop:title}]. */
+function parsePath(fieldPath: string): PathSegment[] {
+  const segments: PathSegment[] = []
+  for (const part of fieldPath.split('.')) {
+    const match = part.match(/^([^[\]]+)(\[(\d+)\])?$/)
+    if (!match) continue
+    segments.push({ kind: 'prop', name: match[1] })
+    if (match[3] !== undefined) {
+      segments.push({ kind: 'index', index: Number(match[3]) })
+    }
   }
-  return findProp(current, pathParts[pathParts.length - 1])
+  return segments
+}
+
+/** Walks a parsed path from a step's object literal, descending through nested objects and array indices. */
+function resolveExpression(root: ts.ObjectLiteralExpression, segments: PathSegment[]): ts.Expression | undefined {
+  let current: ts.Expression = root
+  for (const seg of segments) {
+    if (seg.kind === 'prop') {
+      if (!ts.isObjectLiteralExpression(current)) return undefined
+      const prop = findProp(current, seg.name)
+      if (!prop) return undefined
+      current = prop.initializer
+    } else {
+      if (!ts.isArrayLiteralExpression(current)) return undefined
+      const el = current.elements[seg.index]
+      if (!el) return undefined
+      current = el
+    }
+  }
+  return current
+}
+
+/** Finds the array literal for `arrayField` on the step identified by `stepId`, across a single parsed source file. */
+function findArrayLiteral(sourceFile: ts.SourceFile, stepId: string, arrayField: string): ts.ArrayLiteralExpression | undefined {
+  function visit(node: ts.Node): ts.ArrayLiteralExpression | undefined {
+    if (isStepObject(node)) {
+      const idValue = stringLikeValue(findProp(node, 'id')!.initializer)
+      if (idValue === stepId) {
+        const prop = findProp(node, arrayField)
+        return prop && ts.isArrayLiteralExpression(prop.initializer) ? prop.initializer : undefined
+      }
+    }
+    return ts.forEachChild(node, visit)
+  }
+  return visit(sourceFile)
+}
+
+/** Serializes a new array item (plain string, or a flat string-valued object) into TS source. */
+function serializeArrayItem(item: unknown): string {
+  if (typeof item === 'string') return toTemplateLiteralSource(item)
+  if (item && typeof item === 'object') {
+    const obj = item as Record<string, unknown>
+    const parts: string[] = []
+    for (const [key, value] of Object.entries(obj)) {
+      if (typeof value === 'string' && value.length > 0) {
+        parts.push(`${key}: ${toTemplateLiteralSource(value)}`)
+      }
+    }
+    return `{ ${parts.join(', ')} }`
+  }
+  return toTemplateLiteralSource(String(item))
 }
 
 /** True for an object literal that looks like a DemoStep — every step type shares `id` + `type`. */
@@ -108,11 +163,11 @@ function tryUpdateInFile(filePath: string, stepId: string, label: string, oldCod
   return { status: 'updated', filePath }
 }
 
-/** Finds a scalar text field (top-level, or a dot-path like "callout.label") on the step identified by `stepId`. */
+/** Finds a scalar text field on the step identified by `stepId` — supports dot-paths and array indices, e.g. "callout.label" or "bullets[2].title". */
 function tryUpdateFieldInFile(filePath: string, stepId: string, fieldPath: string, oldValue: string, newValue: string): EditOutcome {
   const source = fs.readFileSync(filePath, 'utf-8')
   const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true)
-  const pathParts = fieldPath.split('.')
+  const segments = parsePath(fieldPath)
 
   let sawStale = false
 
@@ -121,12 +176,12 @@ function tryUpdateFieldInFile(filePath: string, stepId: string, fieldPath: strin
       const idProp = findProp(node, 'id')!
       const idValue = stringLikeValue(idProp.initializer)
       if (idValue === stepId) {
-        const targetProp = findNestedProp(node, pathParts)
-        if (targetProp) {
-          const currentValue = stringLikeValue(targetProp.initializer)
+        const target = resolveExpression(node, segments)
+        if (target) {
+          const currentValue = stringLikeValue(target)
           if (currentValue !== null) {
             if (currentValue.trim() === oldValue.trim()) {
-              return targetProp.initializer
+              return target
             }
             sawStale = true
           }
@@ -143,6 +198,82 @@ function tryUpdateFieldInFile(filePath: string, stepId: string, fieldPath: strin
   }
 
   applyEdit(filePath, source, sourceFile, targetNode, newValue)
+  return { status: 'updated', filePath }
+}
+
+/** Appends a new element to the end of an array field on the step identified by `stepId`. */
+function tryAddArrayItemInFile(filePath: string, stepId: string, arrayField: string, item: unknown): EditOutcome {
+  const source = fs.readFileSync(filePath, 'utf-8')
+  const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true)
+  const arrayLiteral = findArrayLiteral(sourceFile, stepId, arrayField)
+  if (!arrayLiteral) return { status: 'not-found' }
+
+  const itemSource = serializeArrayItem(item)
+  const elements = arrayLiteral.elements
+
+  let insertPos: number
+  let insertText: string
+  if (elements.length === 0) {
+    insertPos = arrayLiteral.getStart(sourceFile) + 1
+    insertText = itemSource
+  } else {
+    const last = elements[elements.length - 1]
+    const lastStart = last.getStart(sourceFile)
+    const lineStart = sourceFile.getLineStarts()[sourceFile.getLineAndCharacterOfPosition(lastStart).line]
+    const indent = source.slice(lineStart, lastStart)
+    insertPos = last.getEnd()
+    insertText = `,\n${indent}${itemSource}`
+  }
+
+  const updatedSource = source.slice(0, insertPos) + insertText + source.slice(insertPos)
+  fs.writeFileSync(filePath, updatedSource, 'utf-8')
+  return { status: 'updated', filePath }
+}
+
+/** Removes the element at `index` from an array field on the step identified by `stepId`, swallowing the adjacent comma. */
+function tryRemoveArrayItemInFile(
+  filePath: string,
+  stepId: string,
+  arrayField: string,
+  index: number,
+  compareField: string | null,
+  oldValue: string,
+): EditOutcome {
+  const source = fs.readFileSync(filePath, 'utf-8')
+  const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true)
+  const arrayLiteral = findArrayLiteral(sourceFile, stepId, arrayField)
+  if (!arrayLiteral) return { status: 'not-found' }
+
+  const elements = arrayLiteral.elements
+  const target = elements[index]
+  if (!target) return { status: 'not-found' }
+
+  let currentValue: string | null
+  if (compareField) {
+    if (!ts.isObjectLiteralExpression(target)) return { status: 'not-found' }
+    const prop = findProp(target, compareField)
+    currentValue = prop ? stringLikeValue(prop.initializer) : null
+  } else {
+    currentValue = stringLikeValue(target)
+  }
+  if (currentValue === null) return { status: 'not-found' }
+  if (currentValue.trim() !== oldValue.trim()) return { status: 'stale' }
+
+  let start: number
+  let end: number
+  if (index < elements.length - 1) {
+    start = target.getStart(sourceFile)
+    end = elements[index + 1].getStart(sourceFile)
+  } else if (index > 0) {
+    start = elements[index - 1].getEnd()
+    end = target.getEnd()
+  } else {
+    start = target.getStart(sourceFile)
+    end = target.getEnd()
+  }
+
+  const updatedSource = source.slice(0, start) + source.slice(end)
+  fs.writeFileSync(filePath, updatedSource, 'utf-8')
   return { status: 'updated', filePath }
 }
 
@@ -194,4 +325,47 @@ export function updateStepField(stepId: string, fieldPath: string, oldValue: str
     return { ok: false, error: 'The content on disk no longer matches what was displayed — reload and try again.' }
   }
   return { ok: false, error: `Could not find field "${fieldPath}" on step "${stepId}"` }
+}
+
+/** Appends `item` to the array field `arrayField` on the step identified by `stepId`. */
+export function addArrayItem(stepId: string, arrayField: string, item: unknown): EditScriptResult {
+  if (!stepId || !arrayField) {
+    return { ok: false, error: 'stepId and field are required' }
+  }
+  const files = listDemoFiles(DEMOS_ROOT)
+  for (const file of files) {
+    const result = tryAddArrayItemInFile(file, stepId, arrayField, item)
+    if (result.status === 'updated') {
+      return { ok: true, filePath: path.relative(process.cwd(), result.filePath) }
+    }
+  }
+  return { ok: false, error: `Could not find array field "${arrayField}" on step "${stepId}"` }
+}
+
+/** Removes the element at `index` from the array field `arrayField` on the step identified by `stepId`. */
+export function removeArrayItem(
+  stepId: string,
+  arrayField: string,
+  index: number,
+  compareField: string | null,
+  oldValue: string,
+): EditScriptResult {
+  if (!stepId || !arrayField) {
+    return { ok: false, error: 'stepId and field are required' }
+  }
+  const files = listDemoFiles(DEMOS_ROOT)
+  let sawStale = false
+  for (const file of files) {
+    const result = tryRemoveArrayItemInFile(file, stepId, arrayField, index, compareField, oldValue)
+    if (result.status === 'updated') {
+      return { ok: true, filePath: path.relative(process.cwd(), result.filePath) }
+    }
+    if (result.status === 'stale') {
+      sawStale = true
+    }
+  }
+  if (sawStale) {
+    return { ok: false, error: 'The item on disk no longer matches what was displayed — reload and try again.' }
+  }
+  return { ok: false, error: `Could not find item ${index} of array "${arrayField}" on step "${stepId}"` }
 }
