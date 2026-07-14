@@ -1,6 +1,6 @@
 import type { Plugin } from 'vite'
 import { exec } from 'node:child_process'
-import { loadDotEnvForShell } from './env-file-utils.ts'
+import { loadDotEnvForShell, upsertEnvVars } from './env-file-utils.ts'
 
 /**
  * Dev-server-only endpoint that executes a fixed, hardcoded shell command
@@ -20,6 +20,11 @@ import { loadDotEnvForShell } from './env-file-utils.ts'
  * merged into the environment of every subsequent live command, so a later
  * step's `curl ... "$OPENAI_API_BASE/v1/models"` resolves against real
  * values without the browser ever seeing or handling the actual secret.
+ *
+ * A different handful (see `envOverrides` below) instead write straight to
+ * the real .env file before running — so the change shows up in Settings
+ * and in every variable-hover preview across the app, not just later live
+ * commands in this session.
  */
 interface CommandDef {
   command: string
@@ -27,6 +32,8 @@ interface CommandDef {
   requiredEnv?: string[]
   /** After running, parse stdout and capture these into capturedEnv for later commands. */
   captures?: (stdout: string) => Record<string, string> | null
+  /** Written into .env (upserted, preserving everything else) before this command runs. */
+  envOverrides?: Record<string, string>
 }
 
 function captureServiceKeyCredentials(stdout: string): Record<string, string> | null {
@@ -45,6 +52,8 @@ function captureServiceKeyCredentials(stdout: string): Record<string, string> | 
     return null
   }
 }
+
+const SDK_LIST_JAVA_SCRIPT = ['source "$HOME/.sdkman/bin/sdkman-init.sh"', 'sdk list java'].join('\n')
 
 const ENV_CHECK_SCRIPT = [
   'set -a',
@@ -68,6 +77,21 @@ const ALLOWED_COMMANDS: Record<string, CommandDef> = {
   },
   'env-check.sh': { command: ENV_CHECK_SCRIPT },
   'cf-target.sh': { command: 'cf target -o "$CF_ORG" -s "$CF_SPACE"' },
+  'cf-login.sh': {
+    // `< /dev/null` forces an immediate, deterministic EOF on the "Select a
+    // space" prompt — Node's exec() leaves the child's stdin open-but-idle
+    // rather than closed, which otherwise makes the CF CLI treat the prompt
+    // as an error (exit 255) instead of skipping it cleanly (exit 0).
+    command: 'cf login -a "$CF_API_URL" -u "$CF_USERNAME" -p "$CF_PASSWORD" -o "$CF_ORG" < /dev/null',
+  },
+  'set-cf-space-app-advisor.sh': {
+    command: 'export CF_SPACE=kwd-app-advisor && echo $CF_SPACE',
+    envOverrides: { CF_SPACE: 'kwd-app-advisor' },
+  },
+  'cf-ensure-space.sh': {
+    command: 'cf space "$CF_SPACE" || cf create-space "$CF_SPACE" -o "$CF_ORG"',
+  },
+  'sdk-list-java.sh': { command: SDK_LIST_JAVA_SCRIPT },
 }
 
 const TIMEOUT_MS = 20_000
@@ -121,6 +145,10 @@ export function runLivePlugin(): Plugin {
             return
           }
 
+          if (def.envOverrides) {
+            upsertEnvVars(def.envOverrides)
+          }
+
           exec(
             def.command,
             { timeout: TIMEOUT_MS, shell: '/bin/bash', env: { ...process.env, ...loadDotEnvForShell(), ...capturedEnv } },
@@ -152,6 +180,7 @@ export function runLivePlugin(): Plugin {
                   exitCode: error ? error.code ?? 1 : 0,
                   timedOut: Boolean(error && error.killed),
                   capturedVars,
+                  envUpdated: def.envOverrides ? Object.keys(def.envOverrides) : undefined,
                 }),
               )
             },

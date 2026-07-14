@@ -16,4 +16,11 @@ export const demoRegistry: DemoRegistryEntry[] = [
     tags: ['AI', 'Tanzu Platform', 'Architecture'],
     load: () => import('./tanzu-ai-services'),
   },
+  {
+    id: 'application-advisor',
+    title: 'Application Advisor',
+    subtitle: 'Continuous Spring upgrades — SBOM, upgrade plans, recipes & best-practice advice',
+    tags: ['Spring', 'Tanzu Platform', 'Upgrades'],
+    load: () => import('./application-advisor'),
+  },
 ]

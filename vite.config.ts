@@ -13,4 +13,13 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    watch: {
+      // .env is read directly by our own plugins (never via import.meta.env),
+      // and Settings/live-run commands write to it as part of normal use —
+      // Vite's default restart-on-.env-change would otherwise drop the
+      // browser's connection mid-request every time that happens.
+      ignored: ['**/.env'],
+    },
+  },
 })

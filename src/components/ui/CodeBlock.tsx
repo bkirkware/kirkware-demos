@@ -13,6 +13,7 @@ interface LiveResult {
   exitCode: number
   timedOut?: boolean
   capturedVars?: string[]
+  envUpdated?: string[]
 }
 
 export function CodeBlock({ block }: { block: CommandBlock }) {
@@ -46,6 +47,9 @@ export function CodeBlock({ block }: { block: CommandBlock }) {
         setLiveError(data.error ?? `Request failed (${res.status})`)
       } else {
         setLiveResult(data)
+        if (data.envUpdated?.length > 0) {
+          useEnvVarsStore.getState().refresh()
+        }
       }
     } catch {
       setLiveError('Could not reach the local run-live endpoint — is `npm run dev` running?')
@@ -173,6 +177,11 @@ export function CodeBlock({ block }: { block: CommandBlock }) {
                 {liveResult.capturedVars && liveResult.capturedVars.length > 0 && (
                   <div className="mt-1 text-[11px] text-emerald-400/80">
                     ✓ Captured {liveResult.capturedVars.join(', ')} for later live steps
+                  </div>
+                )}
+                {liveResult.envUpdated && liveResult.envUpdated.length > 0 && (
+                  <div className="mt-1 text-[11px] text-emerald-400/80">
+                    ✓ Saved {liveResult.envUpdated.join(', ')} to .env — visible in Settings and on hover everywhere
                   </div>
                 )}
               </div>

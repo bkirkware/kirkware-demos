@@ -54,6 +54,16 @@ export function writeEnvFile(vars: EnvVar[]): EnvVar[] {
   return cleaned
 }
 
+/** Merges `overrides` into the current .env (creating it from env.example first if needed) and writes it back. */
+export function upsertEnvVars(overrides: Record<string, string>): EnvVar[] {
+  const { vars } = readEnvFileVars()
+  const merged = new Map(vars.map((v) => [v.key, v.value]))
+  for (const [key, value] of Object.entries(overrides)) {
+    merged.set(key, value)
+  }
+  return writeEnvFile(Array.from(merged, ([key, value]) => ({ key, value })))
+}
+
 export function readMaskedKeys(): Set<string> {
   if (!fs.existsSync(MASKED_PATH)) return new Set()
   const keys = fs

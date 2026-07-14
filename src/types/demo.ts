@@ -28,6 +28,8 @@ export interface TitleStep extends DemoStepBase {
 
 export interface ContentBullet {
   title: string
+  /** If set, renders the title as a link — supports `$VAR` / `${VAR}` env-var interpolation, same as narrative text. */
+  titleUrl?: string
   description?: string
   icon?: string
 }

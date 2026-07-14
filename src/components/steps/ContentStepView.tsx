@@ -2,6 +2,8 @@ import { motion } from 'framer-motion'
 import type { ContentStep } from '@/types/demo'
 import { Markdown } from '@/components/ui/Markdown'
 import { Icon } from '@/components/ui/Icon'
+import { useEnvVarsStore } from '@/store/envVarsStore'
+import { interpolateEnvVars } from '@/lib/envVarTokens'
 import { StepHeader } from './StepHeader'
 
 const calloutTone = {
@@ -11,6 +13,8 @@ const calloutTone = {
 }
 
 export function ContentStepView({ step }: { step: ContentStep }) {
+  const envVars = useEnvVarsStore((s) => s.vars)
+
   return (
     <div className="mx-auto h-full max-w-3xl overflow-y-auto px-12 py-12">
       <StepHeader section={step.section} heading={step.heading} sourceUrl={step.sourceUrl} />
@@ -37,9 +41,22 @@ export function ContentStepView({ step }: { step: ContentStep }) {
                     <Icon name={b.icon} size={16} />
                   </div>
                 )}
-                <div className="text-sm font-semibold text-slate-100">{b.title}</div>
+                {b.titleUrl ? (
+                  <a
+                    href={interpolateEnvVars(b.titleUrl, envVars)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm font-semibold text-cyan-300 underline decoration-cyan-300/40 underline-offset-2 hover:text-cyan-200"
+                  >
+                    {b.title}
+                  </a>
+                ) : (
+                  <div className="text-sm font-semibold text-slate-100">{b.title}</div>
+                )}
               </div>
-              {b.description && <p className="text-[13px] leading-relaxed text-slate-400">{b.description}</p>}
+              {b.description && (
+                <p className="text-[13px] leading-relaxed break-words text-slate-400">{b.description}</p>
+              )}
             </motion.div>
           ))}
         </div>
@@ -53,7 +70,7 @@ export function ContentStepView({ step }: { step: ContentStep }) {
           className={`mt-6 rounded-xl border p-4 ${calloutTone[step.callout.tone ?? 'info']}`}
         >
           <div className="mb-1 text-xs font-semibold tracking-wide uppercase opacity-80">{step.callout.label}</div>
-          <div className="text-sm leading-relaxed">{step.callout.body}</div>
+          <div className="text-sm leading-relaxed break-words">{step.callout.body}</div>
         </motion.div>
       )}
     </div>
