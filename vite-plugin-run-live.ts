@@ -164,6 +164,10 @@ const ALLOWED_COMMANDS: Record<string, CommandDef> = {
     command: 'export CF_SPACE=kwd-app-advisor && echo $CF_SPACE',
     envOverrides: { CF_SPACE: 'kwd-app-advisor' },
   },
+  'set-cf-space-app-assessment.sh': {
+    command: 'export CF_SPACE=kwd-app-assessment && echo $CF_SPACE',
+    envOverrides: { CF_SPACE: 'kwd-app-assessment' },
+  },
   'cf-ensure-space.sh': {
     command: 'cf space "$CF_SPACE" || cf create-space "$CF_SPACE" -o "$CF_ORG"',
   },

@@ -37,4 +37,11 @@ export const demoRegistry: DemoRegistryEntry[] = [
     tags: ['Agents', 'Tanzu Platform', 'MCP'],
     load: () => import('./kirkwaregpt'),
   },
+  {
+    id: 'app-assessment',
+    title: 'Application Assessment',
+    subtitle: 'Portfolio discovery, suitability scoring, and onboarding — from a CSV of repos to a running app on Tanzu Platform',
+    tags: ['Spring', 'Tanzu Platform', 'Modernization'],
+    load: () => import('./app-assessment'),
+  },
 ]
