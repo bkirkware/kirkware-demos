@@ -1,7 +1,8 @@
-import { FlaskConical, Server, Settings as SettingsIcon, Sparkles } from 'lucide-react'
+import { FlaskConical, Settings as SettingsIcon, Sparkles } from 'lucide-react'
 import { useDemoStore } from '@/store/demoStore'
 import { useViewStore, type AppView } from '@/store/viewStore'
 import { useEnvVarsStore } from '@/store/envVarsStore'
+import { Icon } from '@/components/ui/Icon'
 import { DemoSelector } from './DemoSelector'
 import { EnvProfileSelector } from './EnvProfileSelector'
 
@@ -50,21 +51,22 @@ export function TopBar() {
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
+        {view === 'demo' && demo && (
+          <span className="hidden font-mono text-xs text-slate-500 sm:inline mr-2">
+            Step {stepIndex + 1} / {demo.steps.length}
+          </span>
+        )}
         {(cfOrg || cfSpace) && (
           <div
             className="hidden items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-xs text-slate-400 sm:flex"
             title="Current cf target (org / space)"
           >
-            <Server size={13} className="text-slate-500" />
+            <Icon name="cloud-foundry" size={14} />
+            <span className="text-slate-600">Org:</span>
             <span>{cfOrg ?? '—'}</span>
-            <span className="text-slate-600">/</span>
+            <span className="text-slate-600">Space:</span>
             <span>{cfSpace ?? '—'}</span>
           </div>
-        )}
-        {view === 'demo' && demo && (
-          <span className="hidden font-mono text-xs text-slate-500 sm:inline mr-2">
-            Step {stepIndex + 1} / {demo.steps.length}
-          </span>
         )}
         {NAV_ITEMS.map(({ view: itemView, label, icon: ItemIcon }) => (
           <button

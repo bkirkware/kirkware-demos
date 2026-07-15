@@ -30,6 +30,7 @@ import {
   Workflow,
   type LucideProps,
 } from 'lucide-react'
+import { CloudFoundryIcon } from './icons/CloudFoundryIcon'
 import { SpringAiIcon } from './icons/SpringAiIcon'
 import { SpringLeafIcon } from './icons/SpringLeafIcon'
 import { TanzuIcon } from './icons/TanzuIcon'
@@ -41,6 +42,7 @@ export const iconRegistry = {
   boxes: Boxes,
   braces: Braces,
   cloud: Cloud,
+  'cloud-foundry': CloudFoundryIcon,
   cpu: Cpu,
   database: Database,
   'file-text': FileText,
