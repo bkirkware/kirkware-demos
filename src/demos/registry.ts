@@ -30,4 +30,11 @@ export const demoRegistry: DemoRegistryEntry[] = [
     tags: ['Agents', 'Tanzu Platform', 'Cloud Foundry'],
     load: () => import('./cf-coding-agents'),
   },
+  {
+    id: 'kirkwaregpt',
+    title: 'KirkwareGPT',
+    subtitle: 'An internal AI agent — Agent Buildpack, MCP Gateway, RAG, and policy governance on Tanzu AI Services',
+    tags: ['Agents', 'Tanzu Platform', 'MCP'],
+    load: () => import('./kirkwaregpt'),
+  },
 ]

@@ -81,6 +81,66 @@ const ENV_CHECK_SCRIPT = [
   'done < .env',
 ].join('\n')
 
+const KIRKWAREGPT_CREATE_AGENTS_MD_SCRIPT = [
+  'cd "$TEMP_WORKSPACE/kirkwaregpt" && cat > AGENTS.md <<\'EOF\'',
+  'You are KirkwareGPT, an internal engineering assistant for Kirkware.',
+  "Answer questions concisely and accurately, grounded in Kirkware's own",
+  "runbooks and documentation whenever they're available to you.",
+  'When you have access to tools, use them to provide better answers.',
+  'EOF',
+].join('\n')
+
+const KIRKWAREGPT_CREATE_MANIFEST_SCRIPT = [
+  'cd "$TEMP_WORKSPACE/kirkwaregpt" && cat > manifest.yaml <<\'EOF\'',
+  'applications:',
+  '- name: kirkwaregpt',
+  '  buildpacks:',
+  '  - agent_buildpack',
+  '  routes:',
+  '  - route: kirkwaregpt.apps.tanzu.kirkware.net',
+  'EOF',
+].join('\n')
+
+const KIRKWAREGPT_CREATE_GITHUB_MCP_MANIFEST_SCRIPT = [
+  'cd "$TEMP_WORKSPACE/github-mcp-server" && cat > github-mcp-manifest.yaml <<EOF',
+  'applications:',
+  '  - name: github-mcp',
+  '    instances: 1',
+  '    memory: 124M',
+  '    buildpacks:',
+  '      - go_buildpack',
+  '    env:',
+  '      GO_INSTALL_PACKAGE_SPEC: github.com/github/github-mcp-server/cmd/github-mcp-server/',
+  '    command: "bin/github-mcp-server --port 8080 --gh-host ${GITHUB_HOST:-github.com} http"',
+  '    routes:',
+  '    - route: github-mcp.apps.internal',
+  'EOF',
+].join('\n')
+
+const KIRKWAREGPT_CREATE_OAUTH_UPS_SCRIPT = [
+  'cf create-user-provided-service github-mcp-oauth \\',
+  "-p '{",
+  '  "authorization_endpoint": "https://github.com/login/oauth/authorize",',
+  '  "token_endpoint": "https://github.com/login/oauth/access_token",',
+  '  "client_id": "\'"$GIT_MCP_OAUTH_CLIENT_ID"\'",',
+  '  "client_secret": "\'"$GIT_MCP_OAUTH_CLIENT_SECRET"\'",',
+  '  "scopes": ["repo", "read:user"],',
+  '  "issuer": "https://github.com/login/oauth"',
+  "}'",
+].join('\n')
+
+const KIRKWAREGPT_BIND_GATEWAY_SCRIPT = [
+  'cf bind-service github-mcp mcp-gateway-1 \\',
+  "-c '{",
+  '  "auth": {',
+  '    "service-instance": {',
+  '      "type": "OAUTH",',
+  '      "name": "github-mcp-oauth"',
+  '    }',
+  '  }',
+  "}' --wait",
+].join('\n')
+
 const ALLOWED_COMMANDS: Record<string, CommandDef> = {
   'marketplace.sh': { command: 'cf marketplace -e ai-models' },
   'service-key.sh': {
@@ -127,9 +187,58 @@ const ALLOWED_COMMANDS: Record<string, CommandDef> = {
     command: 'cf service-key anthropic-qwen-model anthropic-qwen-model-key',
     captures: captureQwenServiceKeyCredentials,
   },
+  'set-cf-space-kirkwaregpt.sh': {
+    command: 'export CF_SPACE=kirkware-gpt && echo $CF_SPACE',
+    envOverrides: { CF_SPACE: 'kirkware-gpt' },
+  },
+  'marketplace-mcp-gateway.sh': { command: 'cf marketplace -e mcp-gateway' },
+  'marketplace-postgres.sh': { command: 'cf marketplace -e postgres' },
+  'cf-apps.sh': { command: 'cf apps' },
+  'cf-services.sh': { command: 'cf services' },
+  'cf-ensure-kirkwaregpt-model.sh': {
+    command: 'cf service kirkwaregpt-model || cf create-service ai-models kirkware-all-models kirkwaregpt-model --wait',
+  },
+  'cf-ensure-mcp-gateway.sh': {
+    command: 'cf service mcp-gateway-1 || cf create-service mcp-gateway gateway mcp-gateway-1 --wait',
+  },
+  'cf-show-mcp-gateway.sh': { command: 'cf service mcp-gateway-1' },
+  'kirkwaregpt-mkdir.sh': { command: 'mkdir -p "$TEMP_WORKSPACE/kirkwaregpt"' },
+  'kirkwaregpt-create-agents-md.sh': { command: KIRKWAREGPT_CREATE_AGENTS_MD_SCRIPT },
+  'kirkwaregpt-create-manifest.sh': { command: KIRKWAREGPT_CREATE_MANIFEST_SCRIPT },
+  'kirkwaregpt-push.sh': { command: 'cd "$TEMP_WORKSPACE/kirkwaregpt" && cf push kirkwaregpt' },
+  'kirkwaregpt-app.sh': { command: 'cf app kirkwaregpt' },
+  'kirkwaregpt-bind-model.sh': { command: 'cf bind-service kirkwaregpt kirkwaregpt-model --wait' },
+  'kirkwaregpt-set-default-model.sh': { command: 'cf set-env kirkwaregpt ANTHROPIC_MODEL claude-sonnet-4-6' },
+  'kirkwaregpt-restage.sh': { command: 'cf restage kirkwaregpt' },
+  'kirkwaregpt-create-postgres.sh': {
+    command: 'cf create-service postgres "$POSTGRES_PLAN" kirkwaregpt-db --wait',
+  },
+  'kirkwaregpt-bind-postgres.sh': { command: 'cf bind-service kirkwaregpt kirkwaregpt-db --wait' },
+  'kirkwaregpt-clone-github-mcp.sh': {
+    command: 'cd "$TEMP_WORKSPACE" && gh repo clone github/github-mcp-server && cd github-mcp-server && git checkout v0.33.1',
+  },
+  'kirkwaregpt-create-github-mcp-manifest.sh': { command: KIRKWAREGPT_CREATE_GITHUB_MCP_MANIFEST_SCRIPT },
+  'kirkwaregpt-push-github-mcp.sh': {
+    command: 'cd "$TEMP_WORKSPACE/github-mcp-server" && cf push -f github-mcp-manifest.yaml',
+  },
+  'kirkwaregpt-create-oauth-ups.sh': { command: KIRKWAREGPT_CREATE_OAUTH_UPS_SCRIPT },
+  'kirkwaregpt-bind-github-mcp-gateway.sh': { command: KIRKWAREGPT_BIND_GATEWAY_SCRIPT },
+  'kirkwaregpt-restage-github-mcp.sh': { command: 'cf restage github-mcp' },
+  'kirkwaregpt-create-mcp-ups.sh': {
+    command: 'cf create-user-provided-service github-mcp -p \'{"url": "https://mcp-gateway-1.apps.tanzu.kirkware.net/github-mcp/mcp"}\' -t mcp-server',
+  },
+  'kirkwaregpt-bind-github-mcp-agent.sh': { command: 'cf bind-service kirkwaregpt github-mcp --wait' },
+  'kirkwaregpt-delete-agent.sh': { command: 'cf delete kirkwaregpt -f' },
+  'kirkwaregpt-delete-github-mcp.sh': { command: 'cf delete github-mcp -f' },
+  'kirkwaregpt-delete-model.sh': { command: 'cf delete-service kirkwaregpt-model -f --wait' },
+  'kirkwaregpt-delete-postgres.sh': { command: 'cf delete-service kirkwaregpt-db -f --wait' },
+  'kirkwaregpt-delete-mcp-gateway.sh': { command: 'cf delete-service mcp-gateway-1 -f --wait' },
+  'kirkwaregpt-delete-oauth-ups.sh': { command: 'cf delete-service github-mcp-oauth -f' },
+  'kirkwaregpt-delete-mcp-server-ups.sh': { command: 'cf delete-service github-mcp -f' },
+  'kirkwaregpt-clean-workspace.sh': { command: 'rm -rf "$TEMP_WORKSPACE/kirkwaregpt"' },
 }
 
-const TIMEOUT_MS = 20_000
+const TIMEOUT_MS = 300_000
 
 /** In-memory only — resets on dev server restart. Never sent verbatim to the browser except as part of a `capturedVars` name list. */
 const capturedEnv: Record<string, string> = {}
