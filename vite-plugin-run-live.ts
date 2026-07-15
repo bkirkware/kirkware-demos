@@ -1,5 +1,5 @@
 import type { Plugin } from 'vite'
-import { exec } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { loadDotEnvForShell, upsertEnvVars } from './env-file-utils.ts'
 
 /**
@@ -293,42 +293,94 @@ export function runLivePlugin(): Plugin {
             upsertEnvVars(def.envOverrides)
           }
 
-          exec(
-            def.command,
-            { timeout: TIMEOUT_MS, shell: '/bin/bash', env: { ...process.env, ...loadDotEnvForShell(), ...capturedEnv } },
-            (error, rawStdout, stderr) => {
-              let stdout = rawStdout
-              let capturedVars: string[] | undefined
-              if (def.captures && !error) {
-                const captured = def.captures(stdout)
-                if (captured) {
-                  Object.assign(capturedEnv, captured)
-                  capturedVars = Object.keys(captured)
-                  // Never echo captured secrets back to the browser — they're
-                  // used server-side for later live commands, but this output
-                  // may be on screen in front of an audience.
-                  for (const [key, value] of Object.entries(captured)) {
-                    if (key.toLowerCase().includes('key') && value.length > 16) {
-                      const redacted = `${value.slice(0, 10)}…redacted…${value.slice(-6)}`
-                      stdout = stdout.split(value).join(redacted)
-                    }
+          // Streamed as newline-delimited JSON events rather than one
+          // buffered response, so a long-running command (cf push, cf
+          // restage) shows output as it happens instead of going silent
+          // until it exits or times out.
+          res.statusCode = 200
+          res.setHeader('Content-Type', 'application/x-ndjson')
+          res.flushHeaders()
+
+          function send(event: Record<string, unknown>) {
+            res.write(JSON.stringify(event) + '\n')
+          }
+
+          const child = spawn(def.command, {
+            shell: '/bin/bash',
+            env: { ...process.env, ...loadDotEnvForShell(), ...capturedEnv },
+          })
+
+          // Commands with a `captures` function (they print raw credentials,
+          // e.g. `cf service-key`) are never streamed live — their output is
+          // buffered and redacted exactly like before, then sent as a single
+          // stdout/stderr event right before `exit`. Everything else streams
+          // chunk-by-chunk as it's produced.
+          let stdoutBuf = ''
+          let stderrBuf = ''
+          let timedOut = false
+          let spawnFailed = false
+
+          const timer = setTimeout(() => {
+            timedOut = true
+            child.kill()
+          }, TIMEOUT_MS)
+
+          child.stdout.on('data', (chunk: Buffer) => {
+            const text = chunk.toString('utf-8')
+            if (def.captures) {
+              stdoutBuf += text
+            } else {
+              send({ type: 'stdout', data: text })
+            }
+          })
+
+          child.stderr.on('data', (chunk: Buffer) => {
+            const text = chunk.toString('utf-8')
+            stderrBuf += text
+            if (!def.captures) {
+              send({ type: 'stderr', data: text })
+            }
+          })
+
+          child.on('error', () => {
+            spawnFailed = true
+          })
+
+          child.on('close', (code) => {
+            clearTimeout(timer)
+
+            let capturedVars: string[] | undefined
+            if (def.captures && !spawnFailed && !timedOut && code === 0) {
+              const captured = def.captures(stdoutBuf)
+              if (captured) {
+                Object.assign(capturedEnv, captured)
+                capturedVars = Object.keys(captured)
+                // Never echo captured secrets back to the browser — they're
+                // used server-side for later live commands, but this output
+                // may be on screen in front of an audience.
+                for (const [key, value] of Object.entries(captured)) {
+                  if (key.toLowerCase().includes('key') && value.length > 16) {
+                    const redacted = `${value.slice(0, 10)}…redacted…${value.slice(-6)}`
+                    stdoutBuf = stdoutBuf.split(value).join(redacted)
                   }
                 }
               }
-              res.setHeader('Content-Type', 'application/json')
-              res.end(
-                JSON.stringify({
-                  command: def.command,
-                  stdout,
-                  stderr,
-                  exitCode: error ? error.code ?? 1 : 0,
-                  timedOut: Boolean(error && error.killed),
-                  capturedVars,
-                  envUpdated: def.envOverrides ? Object.keys(def.envOverrides) : undefined,
-                }),
-              )
-            },
-          )
+            }
+
+            if (def.captures) {
+              if (stdoutBuf) send({ type: 'stdout', data: stdoutBuf })
+              if (stderrBuf) send({ type: 'stderr', data: stderrBuf })
+            }
+
+            send({
+              type: 'exit',
+              exitCode: spawnFailed ? 1 : code ?? 1,
+              timedOut,
+              capturedVars,
+              envUpdated: def.envOverrides ? Object.keys(def.envOverrides) : undefined,
+            })
+            res.end()
+          })
         })
       })
     },

@@ -11,7 +11,8 @@ import { VariableHover } from './VariableHover'
 interface LiveResult {
   stdout: string
   stderr: string
-  exitCode: number
+  /** Undefined while the command is still streaming — only set once the `exit` event arrives. */
+  exitCode?: number
   timedOut?: boolean
   capturedVars?: string[]
   envUpdated?: string[]
@@ -52,13 +53,56 @@ export function CodeBlock({ block, stepId }: { block: CommandBlock; stepId?: str
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: block.liveId }),
       })
-      const data = await res.json()
+
       if (!res.ok) {
+        const data = await res.json()
         setLiveError(data.error ?? `Request failed (${res.status})`)
-      } else {
-        setLiveResult(data)
-        if (data.envUpdated?.length > 0) {
-          useEnvVarsStore.getState().refresh()
+        return
+      }
+      if (!res.body) {
+        setLiveError('No response body from the run-live endpoint.')
+        return
+      }
+
+      // The response is newline-delimited JSON events (stdout/stderr chunks,
+      // then a final exit event) rather than one buffered blob, so long-
+      // running commands like `cf push` show output as it happens.
+      let stdout = ''
+      let stderr = ''
+      setLiveResult({ stdout, stderr })
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+        for (const line of lines) {
+          if (!line) continue
+          const event = JSON.parse(line)
+          if (event.type === 'stdout') {
+            stdout += event.data
+            setLiveResult((prev) => ({ ...(prev ?? { stdout: '', stderr: '' }), stdout }))
+          } else if (event.type === 'stderr') {
+            stderr += event.data
+            setLiveResult((prev) => ({ ...(prev ?? { stdout: '', stderr: '' }), stderr }))
+          } else if (event.type === 'exit') {
+            setLiveResult((prev) => ({
+              ...(prev ?? { stdout: '', stderr: '' }),
+              stdout,
+              stderr,
+              exitCode: event.exitCode,
+              timedOut: event.timedOut,
+              capturedVars: event.capturedVars,
+              envUpdated: event.envUpdated,
+            }))
+            if (event.envUpdated?.length > 0) {
+              useEnvVarsStore.getState().refresh()
+            }
+          }
         }
       }
     } catch {
@@ -274,9 +318,17 @@ export function CodeBlock({ block, stepId }: { block: CommandBlock; stepId?: str
                 {liveResult.stdout && <div className="text-slate-200">{liveResult.stdout}</div>}
                 {liveResult.stderr && <div className="text-rose-300/90">{liveResult.stderr}</div>}
                 {liveResult.timedOut && <div className="text-rose-300/90">Command timed out.</div>}
-                <div className={`mt-1.5 text-[11px] ${liveResult.exitCode === 0 ? 'text-emerald-400/80' : 'text-rose-400/80'}`}>
-                  exit code {liveResult.exitCode}
-                </div>
+                {liveResult.exitCode === undefined ? (
+                  liveRunning && (
+                    <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-amber-400/80">
+                      <Loader2 size={11} className="animate-spin" /> running…
+                    </div>
+                  )
+                ) : (
+                  <div className={`mt-1.5 text-[11px] ${liveResult.exitCode === 0 ? 'text-emerald-400/80' : 'text-rose-400/80'}`}>
+                    exit code {liveResult.exitCode}
+                  </div>
+                )}
                 {liveResult.capturedVars && liveResult.capturedVars.length > 0 && (
                   <div className="mt-1 text-[11px] text-emerald-400/80">
                     ✓ Captured {liveResult.capturedVars.join(', ')} for later live steps
