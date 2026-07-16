@@ -137,11 +137,12 @@ cf push -f manifest.yml`,
       { title: 'One more `<style>` block', icon: 'sparkles', description: 'The same `responseInterceptor` injection point already used for the banner now also injects a `:root{...}` / `.dark{...}` override, redefining the base tokens to grey + yellow instead of the agent\'s stock blue.' },
       { title: 'Cascade does the rest', icon: 'shield-check', description: 'Because the override is a same-specificity `:root` rule injected *after* the agent\'s own linked stylesheet in document order, normal CSS cascade rules mean it wins — no `!important`, no touching the agent, no guessing at class names.' },
       { title: 'destructive/-foreground left alone', icon: 'shield', description: 'Error states stay red on purpose — recoloring semantic status colors to match a brand palette is usually the wrong call, even when it\'s technically just as easy.' },
+      { title: 'Favicon and logo, the same way', icon: 'sparkles', description: 'A dedicated `GET /favicon.svg` route — registered ahead of the catch-all proxy, so it short-circuits before the agent\'s own favicon ever gets proxied — serves Kirkware\'s own mark instead. The same inline SVG doubles as the banner\'s logo, so both match exactly.' },
     ],
     callout: {
       label: 'Result',
       tone: 'success',
-      body: 'Confirmed live: `kirkwaregpt-ui-wrapper.apps.tanzu.kirkware.net` now serves the override block ahead of the agent\'s `#root` mount point, redefining `--primary`/`--ring` to `#ca8a04` (light) / `#eab308` (dark) and `--accent` to a neutral grey — a full grey-and-yellow re-theme of the agent\'s own UI, with zero changes to the agent itself.',
+      body: 'Confirmed live: `kirkwaregpt-ui-wrapper.apps.tanzu.kirkware.net` now serves the override block ahead of the agent\'s `#root` mount point, redefining `--primary`/`--ring` to `#ca8a04` (light) / `#eab308` (dark) and `--accent` to a neutral grey — a full grey-and-yellow re-theme of the agent\'s own UI. The favicon and banner logo are Kirkware\'s own SVG mark, confirmed byte-for-byte different from the agent\'s original. All of it with zero changes to the agent itself.',
     },
   },
   {
