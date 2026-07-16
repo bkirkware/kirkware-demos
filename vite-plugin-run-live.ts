@@ -130,7 +130,7 @@ const KIRKWAREGPT_CREATE_OAUTH_UPS_SCRIPT = [
 ].join('\n')
 
 const KIRKWAREGPT_BIND_GATEWAY_SCRIPT = [
-  'cf bind-service github-mcp mcp-gateway-1 \\',
+  'cf bind-service github-mcp kirkwaregpt-mcp-gateway \\',
   "-c '{",
   '  "auth": {',
   '    "service-instance": {',
@@ -203,19 +203,18 @@ const ALLOWED_COMMANDS: Record<string, CommandDef> = {
     command: 'cf service kirkwaregpt-model || cf create-service ai-models kirkware-all-models kirkwaregpt-model --wait',
   },
   'cf-ensure-mcp-gateway.sh': {
-    command: 'cf service mcp-gateway-1 || cf create-service mcp-gateway gateway mcp-gateway-1 --wait',
+    command: 'cf service kirkwaregpt-mcp-gateway || cf create-service mcp-gateway gateway kirkwaregpt-mcp-gateway --wait',
   },
-  'cf-show-mcp-gateway.sh': { command: 'cf service mcp-gateway-1' },
+  'cf-show-mcp-gateway.sh': { command: 'cf service kirkwaregpt-mcp-gateway' },
   'kirkwaregpt-mkdir.sh': { command: 'mkdir -p "$TEMP_WORKSPACE/kirkwaregpt"' },
   'kirkwaregpt-create-agents-md.sh': { command: KIRKWAREGPT_CREATE_AGENTS_MD_SCRIPT },
   'kirkwaregpt-create-manifest.sh': { command: KIRKWAREGPT_CREATE_MANIFEST_SCRIPT },
   'kirkwaregpt-push.sh': { command: 'cd "$TEMP_WORKSPACE/kirkwaregpt" && cf push kirkwaregpt' },
   'kirkwaregpt-app.sh': { command: 'cf app kirkwaregpt' },
   'kirkwaregpt-bind-model.sh': { command: 'cf bind-service kirkwaregpt kirkwaregpt-model --wait' },
-  'kirkwaregpt-set-default-model.sh': { command: 'cf set-env kirkwaregpt ANTHROPIC_MODEL claude-sonnet-4-6' },
   'kirkwaregpt-restage.sh': { command: 'cf restage kirkwaregpt' },
-  'kirkwaregpt-create-postgres.sh': {
-    command: 'cf create-service postgres "$POSTGRES_PLAN" kirkwaregpt-db --wait',
+  'kirkwaregpt-ensure-postgres.sh': {
+    command: 'cf service kirkwaregpt-db || cf create-service postgres "$POSTGRES_PLAN" kirkwaregpt-db --wait',
   },
   'kirkwaregpt-bind-postgres.sh': { command: 'cf bind-service kirkwaregpt kirkwaregpt-db --wait' },
   'kirkwaregpt-clone-github-mcp.sh': {
@@ -229,14 +228,14 @@ const ALLOWED_COMMANDS: Record<string, CommandDef> = {
   'kirkwaregpt-bind-github-mcp-gateway.sh': { command: KIRKWAREGPT_BIND_GATEWAY_SCRIPT },
   'kirkwaregpt-restage-github-mcp.sh': { command: 'cf restage github-mcp' },
   'kirkwaregpt-create-mcp-ups.sh': {
-    command: 'cf create-user-provided-service github-mcp -p \'{"url": "https://mcp-gateway-1.apps.tanzu.kirkware.net/github-mcp/mcp"}\' -t mcp-server',
+    command: 'cf create-user-provided-service github-mcp -p \'{"url": "https://kirkwaregpt-mcp-gateway.apps.tanzu.kirkware.net/github-mcp/mcp"}\' -t mcp-server',
   },
   'kirkwaregpt-bind-github-mcp-agent.sh': { command: 'cf bind-service kirkwaregpt github-mcp --wait' },
   'kirkwaregpt-delete-agent.sh': { command: 'cf delete kirkwaregpt -f' },
   'kirkwaregpt-delete-github-mcp.sh': { command: 'cf delete github-mcp -f' },
   'kirkwaregpt-delete-model.sh': { command: 'cf delete-service kirkwaregpt-model -f --wait' },
   'kirkwaregpt-delete-postgres.sh': { command: 'cf delete-service kirkwaregpt-db -f --wait' },
-  'kirkwaregpt-delete-mcp-gateway.sh': { command: 'cf delete-service mcp-gateway-1 -f --wait' },
+  'kirkwaregpt-delete-mcp-gateway.sh': { command: 'cf delete-service kirkwaregpt-mcp-gateway -f --wait' },
   'kirkwaregpt-delete-oauth-ups.sh': { command: 'cf delete-service github-mcp-oauth -f' },
   'kirkwaregpt-delete-mcp-server-ups.sh': { command: 'cf delete-service github-mcp -f' },
   'kirkwaregpt-clean-workspace.sh': { command: 'rm -rf "$TEMP_WORKSPACE/kirkwaregpt"' },

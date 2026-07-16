@@ -67,6 +67,22 @@ echo $CF_SPACE`,
     ],
   },
   {
+    id: 'labprep-provision-postgres',
+    type: 'command',
+    section: SECTION,
+    title: 'Pre-checks: provision Postgres',
+    heading: 'Start the RAG database now — it can take a few minutes to provision',
+    description: 'Provisioning ahead of time means the Agent section\'s Postgres bind is instant instead of a multi-minute wait mid-demo.',
+    commands: [
+      {
+        label: 'ensure-postgres.sh',
+        lang: 'bash',
+        code: `cf service kirkwaregpt-db || cf create-service postgres "$POSTGRES_PLAN" kirkwaregpt-db --wait`,
+        liveId: 'kirkwaregpt-ensure-postgres.sh',
+      },
+    ],
+  },
+  {
     id: 'labprep-clean-check',
     type: 'command',
     section: SECTION,
@@ -136,7 +152,7 @@ echo $CF_SPACE`,
       {
         label: 'delete-mcp-gateway.sh',
         lang: 'bash',
-        code: `cf delete-service mcp-gateway-1 -f --wait`,
+        code: `cf delete-service kirkwaregpt-mcp-gateway -f --wait`,
         liveId: 'kirkwaregpt-delete-mcp-gateway.sh',
       },
       {

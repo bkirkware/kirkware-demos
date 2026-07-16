@@ -84,17 +84,17 @@ EOF`,
       {
         label: 'ensure-gateway.sh',
         lang: 'bash',
-        code: `cf service mcp-gateway-1 || cf create-service mcp-gateway gateway mcp-gateway-1 --wait`,
+        code: `cf service kirkwaregpt-mcp-gateway || cf create-service mcp-gateway gateway kirkwaregpt-mcp-gateway --wait`,
         liveId: 'cf-ensure-mcp-gateway.sh',
       },
       {
         label: 'show-gateway.sh',
         lang: 'bash',
-        code: `cf service mcp-gateway-1`,
+        code: `cf service kirkwaregpt-mcp-gateway`,
         liveId: 'cf-show-mcp-gateway.sh',
       },
     ],
-    impact: 'The dashboard URL from `cf service mcp-gateway-1` is the same URL every client (Cursor, the OAuth callback, presenter demo) points at from here on.',
+    impact: 'The dashboard URL from `cf service kirkwaregpt-mcp-gateway` is the same URL every client (Cursor, the OAuth callback, presenter demo) points at from here on.',
     sourceUrl: MCP_TUTORIAL,
   },
   {
@@ -121,7 +121,7 @@ EOF`,
       { title: '1. Open OAuth Apps', icon: 'key', description: 'Settings → Developer settings → OAuth Apps → New OAuth App' },
       { title: '2. Name it', icon: 'file-text', description: 'e.g. `github-mcp` — any name that identifies its purpose' },
       { title: '3. Homepage URL', icon: 'globe', description: 'Set to the MCP Gateway dashboard URL from the previous step' },
-      { title: '4. Authorization callback URL', icon: 'route', description: '`<GATEWAY_URL>/github-mcp/auth/callback` — e.g. `https://mcp-gateway-1.apps.tanzu.kirkware.net/github-mcp/auth/callback`' },
+      { title: '4. Authorization callback URL', icon: 'route', description: '`<GATEWAY_URL>/github-mcp/auth/callback` — e.g. `https://kirkwaregpt-mcp-gateway.apps.tanzu.kirkware.net/github-mcp/auth/callback`' },
       { title: '5. Copy credentials', icon: 'lock', description: 'Client ID, plus a newly-generated Client Secret — both feed the user-provided service next' },
     ],
     sourceUrl: MCP_TUTORIAL,
@@ -167,12 +167,12 @@ EOF`,
     section: SECTION,
     title: 'Register the server with the gateway',
     heading: 'One bind-service call does the registration',
-    description: 'Binding `github-mcp` to `mcp-gateway-1` with an `auth` block is what actually registers the server — the gateway now knows this app exists, and how to authenticate calls to it.',
+    description: 'Binding `github-mcp` to `kirkwaregpt-mcp-gateway` with an `auth` block is what actually registers the server — the gateway now knows this app exists, and how to authenticate calls to it.',
     commands: [
       {
         label: 'bind-gateway.sh',
         lang: 'bash',
-        code: `cf bind-service github-mcp mcp-gateway-1 \\
+        code: `cf bind-service github-mcp kirkwaregpt-mcp-gateway \\
 -c '{
   "auth": {
     "service-instance": {
@@ -217,7 +217,7 @@ EOF`,
       {
         label: 'create-mcp-ups.sh',
         lang: 'bash',
-        code: `cf create-user-provided-service github-mcp -p '{"url": "https://mcp-gateway-1.apps.tanzu.kirkware.net/github-mcp/mcp"}' -t mcp-server`,
+        code: `cf create-user-provided-service github-mcp -p '{"url": "https://kirkwaregpt-mcp-gateway.apps.tanzu.kirkware.net/github-mcp/mcp"}' -t mcp-server`,
         liveId: 'kirkwaregpt-create-mcp-ups.sh',
       },
       {
@@ -246,7 +246,7 @@ EOF`,
     bullets: [
       { title: 'The gateway dashboard', icon: 'gauge', description: 'Lists registered servers with per-client connect options — click a client (e.g. Cursor), install, and authenticate through the same OAuth flow just configured.' },
       { title: 'Tanzu Hub usage metrics', icon: 'bar-chart', description: 'Marketplace → Service Offerings → MCP Gateway → Usage — tool popularity and error rates across every client, not just KirkwareGPT.' },
-      { title: 'Audit logs', icon: 'file-text', description: 'Tanzu Hub → Workloads → Apps → the gateway\'s app (find its GUID via `cf service mcp-gateway-1 --guid`) → Logs, filtered to `mcp.audit` for detailed JSON records of every tool call and auth event.' },
+      { title: 'Audit logs', icon: 'file-text', description: 'Tanzu Hub → Workloads → Apps → the gateway\'s app (find its GUID via `cf service kirkwaregpt-mcp-gateway --guid`) → Logs, filtered to `mcp.audit` for detailed JSON records of every tool call and auth event.' },
     ],
     sourceUrl: MCP_TUTORIAL,
   },

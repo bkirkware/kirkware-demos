@@ -57,7 +57,7 @@ export const kirkwaregptMcpGatewayFlow: DiagramDef = {
   id: 'kirkwaregpt-mcp-gateway-flow',
   nodes: [
     { id: 'app', label: 'KirkwareGPT Agent', sublabel: 'bound as mcp-server tag', kind: 'client', icon: 'bot', position: { x: 40, y: 340 }, width: 320 },
-    { id: 'gateway', label: 'MCP Gateway', sublabel: 'mcp-gateway-1 · dashboard', kind: 'gateway', icon: 'network', position: { x: 740, y: 340 }, width: 320 },
+    { id: 'gateway', label: 'MCP Gateway', sublabel: 'kirkwaregpt-mcp-gateway · dashboard', kind: 'gateway', icon: 'network', position: { x: 740, y: 340 }, width: 320 },
     { id: 'github-mcp', label: 'github-mcp', sublabel: 'github-mcp-server binary', kind: 'service', icon: 'git-branch', position: { x: 1440, y: 140 }, width: 320 },
     { id: 'oauth', label: 'GitHub OAuth App', sublabel: 'client id/secret · UPS', kind: 'security', icon: 'key', position: { x: 2140, y: 140 }, width: 320 },
     { id: 'github', label: 'GitHub / GHE', sublabel: 'repos · issues · PRs', kind: 'external', icon: 'globe', position: { x: 1440, y: 460 }, width: 320 },
