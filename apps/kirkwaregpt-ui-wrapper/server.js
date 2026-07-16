@@ -14,11 +14,24 @@ const PORT = process.env.PORT || 8080
 // iframe.
 const BANNER_HTML = `
 <style>body{padding-top:44px!important;}</style>
-<div style="position:fixed;top:0;left:0;right:0;height:44px;z-index:999999;display:flex;align-items:center;gap:10px;padding:0 16px;background:linear-gradient(90deg,#1e293b,#0f172a);border-bottom:1px solid #22304a;font-family:system-ui,-apple-system,sans-serif;box-sizing:border-box;">
-  <div style="width:20px;height:20px;border-radius:6px;flex-shrink:0;background:linear-gradient(135deg,#38bdf8,#6366f1);"></div>
-  <span style="color:#e2e8f0;font-size:13px;font-weight:600;">Kirkware Assistant</span>
-  <span style="margin-left:auto;color:#64748b;font-size:10px;font-family:monospace;">kirkwaregpt-ui-wrapper · Option A</span>
+<div style="position:fixed;top:0;left:0;right:0;height:44px;z-index:999999;display:flex;align-items:center;gap:10px;padding:0 16px;background:linear-gradient(90deg,#27272a,#18181b);border-bottom:1px solid #3f3f46;font-family:system-ui,-apple-system,sans-serif;box-sizing:border-box;">
+  <div style="width:20px;height:20px;border-radius:6px;flex-shrink:0;background:linear-gradient(135deg,#eab308,#ca8a04);"></div>
+  <span style="color:#e4e4e7;font-size:13px;font-weight:600;">Kirkware Assistant</span>
+  <span style="margin-left:auto;color:#a1a1aa;font-size:10px;font-family:monospace;">kirkwaregpt-ui-wrapper · Option A</span>
 </div>`
+
+// The agent's UI is Tailwind v4 + shadcn/ui, whose entire color scheme is
+// centralized in these CSS custom properties on :root/.dark — Tailwind's
+// generated --color-* utility variables just pass through to these, so
+// overriding the base tokens recolors every .bg-primary / .text-accent /
+// .border / .ring usage in the app without touching its own stylesheet.
+// destructive/-foreground are deliberately left alone — errors should stay
+// red regardless of brand color.
+const THEME_OVERRIDE_CSS = `
+<style>
+:root{--background:#fafafa;--foreground:#52525b;--card:#fff;--card-foreground:#52525b;--popover:#fff;--popover-foreground:#52525b;--primary:#ca8a04;--primary-foreground:#1c1917;--secondary:#f4f4f5;--secondary-foreground:#52525b;--muted:#f4f4f5;--muted-foreground:#71717a;--accent:#71717a;--accent-foreground:#fff;--warning:#eab308;--warning-foreground:#1c1917;--muted-hover:#e4e4e7;--border:#d4d4d8;--input:#d4d4d8;--ring:#ca8a04}
+.dark{--background:#18181b;--foreground:#e4e4e7;--card:#27272a;--card-foreground:#e4e4e7;--popover:#27272a;--popover-foreground:#e4e4e7;--primary:#eab308;--primary-foreground:#18181b;--secondary:#27272a;--secondary-foreground:#e4e4e7;--muted:#27272a;--muted-foreground:#a1a1aa;--accent:#a1a1aa;--accent-foreground:#18181b;--warning:#eab308;--warning-foreground:#18181b;--muted-hover:#3f3f46;--border:#3f3f46;--input:#3f3f46;--ring:#eab308}
+</style>`
 
 const app = express()
 
@@ -33,7 +46,7 @@ app.use(
       const contentType = proxyRes.headers['content-type'] || ''
       if (!contentType.includes('text/html')) return responseBuffer
       const html = responseBuffer.toString('utf8')
-      return html.replace(/<body[^>]*>/i, (match) => `${match}${BANNER_HTML}`)
+      return html.replace(/<body[^>]*>/i, (match) => `${match}${THEME_OVERRIDE_CSS}${BANNER_HTML}`)
     }),
   }),
 )

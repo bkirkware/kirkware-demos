@@ -53,9 +53,18 @@ export const uiCustomizationWrapperSteps: DemoStep[] = [
 const BANNER_HTML = \`<style>body{padding-top:44px!important;}</style>
 <div style="position:fixed;top:0;...">Kirkware Assistant</div>\`
 
+// The agent's UI is Tailwind v4 + shadcn/ui — its whole color scheme is
+// ~20 CSS variables on :root/.dark. Redefining the base tokens (not the
+// generated --color-* pass-throughs) recolors every .bg-primary /
+// .text-accent / .ring usage in the app. destructive stays red on purpose.
+const THEME_OVERRIDE_CSS = \`<style>
+:root{--primary:#ca8a04;--primary-foreground:#1c1917;--accent:#71717a;--ring:#ca8a04; /* ...and 12 more */}
+.dark{--primary:#eab308;--primary-foreground:#18181b;--accent:#a1a1aa;--ring:#eab308; /* ...and 12 more */}
+</style>\`
+
 // Proxy every path at the root, transparently — /assets/*, /favicon.svg,
 // WebSocket upgrades, all of it — so nothing the agent's own SPA expects
-// ever breaks. Only HTML responses get the banner spliced in.
+// ever breaks. Only HTML responses get the overrides spliced in.
 app.use('/', createProxyMiddleware({
   target: AGENT_URL,
   changeOrigin: true,
@@ -65,7 +74,7 @@ app.use('/', createProxyMiddleware({
     const contentType = proxyRes.headers['content-type'] || ''
     if (!contentType.includes('text/html')) return responseBuffer
     const html = responseBuffer.toString('utf8')
-    return html.replace(/<body[^>]*>/i, (m) => \`\${m}\${BANNER_HTML}\`)
+    return html.replace(/<body[^>]*>/i, (m) => \`\${m}\${THEME_OVERRIDE_CSS}\${BANNER_HTML}\`)
   }),
 }))`,
       },
@@ -118,15 +127,33 @@ cf push -f manifest.yml`,
     },
   },
   {
+    id: 'ui-wrapper-theme',
+    type: 'content',
+    section: SECTION,
+    title: 'Further than expected: overriding the color scheme',
+    heading: 'The agent\'s UI is Tailwind v4 + shadcn/ui — its whole palette is ~20 CSS variables',
+    body: 'A quick look at the agent\'s actual stylesheet turned up good news: every color in the UI — backgrounds, text, buttons, borders, focus rings, in both light and dark mode — resolves through a small set of CSS custom properties on `:root` and `.dark` (`--primary`, `--accent`, `--background`, `--border`, `--ring`, and friends). Tailwind\'s generated utility classes (`.bg-primary`, `.text-accent`, `.ring-primary`, 18+ usages of `--color-primary` alone) all just pass through to these.',
+    bullets: [
+      { title: 'One more `<style>` block', icon: 'sparkles', description: 'The same `responseInterceptor` injection point already used for the banner now also injects a `:root{...}` / `.dark{...}` override, redefining the base tokens to grey + yellow instead of the agent\'s stock blue.' },
+      { title: 'Cascade does the rest', icon: 'shield-check', description: 'Because the override is a same-specificity `:root` rule injected *after* the agent\'s own linked stylesheet in document order, normal CSS cascade rules mean it wins — no `!important`, no touching the agent, no guessing at class names.' },
+      { title: 'destructive/-foreground left alone', icon: 'shield', description: 'Error states stay red on purpose — recoloring semantic status colors to match a brand palette is usually the wrong call, even when it\'s technically just as easy.' },
+    ],
+    callout: {
+      label: 'Result',
+      tone: 'success',
+      body: 'Confirmed live: `kirkwaregpt-ui-wrapper.apps.tanzu.kirkware.net` now serves the override block ahead of the agent\'s `#root` mount point, redefining `--primary`/`--ring` to `#ca8a04` (light) / `#eab308` (dark) and `--accent` to a neutral grey — a full grey-and-yellow re-theme of the agent\'s own UI, with zero changes to the agent itself.',
+    },
+  },
+  {
     id: 'ui-wrapper-question',
     type: 'question',
     section: SECTION,
     title: 'Where does this fall short?',
-    prompt: 'The wrapper only controls a banner spliced above the chat UI. What would you actually need to change *inside* the chat experience that this option can\'t reach?',
+    prompt: 'Colors turned out to be fully reachable. What\'s still out of this option\'s reach *inside* the chat experience?',
     hints: [
-      'Message bubble styling, input box placement, model picker UI — all still the stock buildpack UI, since the injection only touches the `<body>` open tag',
-      'Deeper styling would mean injecting CSS that overrides the SPA\'s own class names — possible, but brittle against buildpack UI updates changing those names',
-      'If the real requirement is "make it feel like our product," Option B — the fully custom frontend — is the honest next step',
+      'Layout, spacing, component structure, copy — anything not expressed as a CSS variable is still the stock buildpack UI',
+      'This override is only as durable as the agent\'s variable names — if a future buildpack version renames --primary or drops the shadcn convention entirely, the override silently stops working',
+      'If the real requirement goes beyond "our brand colors" to "our actual product," Option B — the fully custom frontend — is the honest next step',
     ],
   },
 ]
