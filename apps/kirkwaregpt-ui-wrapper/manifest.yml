@@ -1,0 +1,10 @@
+applications:
+- name: kirkwaregpt-ui-wrapper
+  buildpacks:
+  - nodejs_buildpack
+  memory: 256M
+  instances: 1
+  env:
+    AGENT_URL: https://kirkwaregpt.apps.tanzu.kirkware.net
+  routes:
+  - route: kirkwaregpt-ui-wrapper.apps.tanzu.kirkware.net
