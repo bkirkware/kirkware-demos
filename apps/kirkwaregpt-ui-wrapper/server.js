@@ -23,7 +23,7 @@ const BANNER_HTML = `
 <div style="position:fixed;top:0;left:0;right:0;height:44px;z-index:999999;display:flex;align-items:center;gap:10px;padding:0 16px;background:linear-gradient(90deg,#27272a,#18181b);border-bottom:1px solid #3f3f46;font-family:system-ui,-apple-system,sans-serif;box-sizing:border-box;">
   <svg width="22" height="22" viewBox="0 0 64 64" style="flex-shrink:0;">${KIRKWARE_LOGO_SVG_BODY}</svg>
   <span style="color:#e4e4e7;font-size:13px;font-weight:600;">Kirkware Assistant</span>
-  <span style="margin-left:auto;color:#a1a1aa;font-size:10px;font-family:monospace;">kirkwaregpt-ui-wrapper · Option A</span>
+  <span style="margin-left:auto;color:#a1a1aa;font-size:10px;font-family:monospace;">kirkwaregpt-ui-wrapper</span>
 </div>`
 
 // The agent's UI is Tailwind v4 + shadcn/ui, whose entire color scheme is

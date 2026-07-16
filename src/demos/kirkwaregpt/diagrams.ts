@@ -89,8 +89,8 @@ export const kirkwaregptPolicyFlow: DiagramDef = {
   ],
 }
 
-// Option A: a branded Node.js reverse-proxy wrapper sits in front of the
-// unmodified agent, so the browser only ever talks to one origin.
+// A branded Node.js reverse-proxy wrapper sits in front of the unmodified
+// agent, so the browser only ever talks to one origin.
 export const kirkwaregptUiWrapperFlow: DiagramDef = {
   id: 'kirkwaregpt-ui-wrapper-flow',
   nodes: [

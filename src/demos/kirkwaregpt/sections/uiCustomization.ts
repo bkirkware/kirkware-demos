@@ -1,24 +1,24 @@
 import type { DemoStep } from '@/types/demo'
 
-const SECTION = 'UI Customization — Option A'
+const SECTION = 'UI Customization'
 
-export const uiCustomizationWrapperSteps: DemoStep[] = [
+export const uiCustomizationSteps: DemoStep[] = [
   {
     id: 'ui-wrapper-intro',
     type: 'content',
     section: SECTION,
-    title: 'What got built',
-    heading: 'Option A, actually implemented: a branded reverse-proxy wrapper',
-    body: 'The Agent section assessed four UI-customization options without building any of them. This is Option A, built for real: a small Node.js/Express app — `kirkwaregpt-ui-wrapper` — deployed as its own `cf push`, sitting in front of the unmodified `kirkwaregpt` agent.',
+    title: 'Branding the chat UI',
+    heading: 'A branded reverse-proxy wrapper, deployed alongside the agent',
+    body: 'The Agent Buildpack\'s chat UI has no theming hooks — no CSS override, no logo slot, no layout config. `kirkwaregpt-ui-wrapper` — a small Node.js/Express app, deployed as its own `cf push` — solves that from the outside: it sits in front of the unmodified `kirkwaregpt` agent and re-brands everything a user actually sees.',
     bullets: [
       { title: 'Zero changes to the agent', icon: 'shield-check', description: 'The agent_buildpack app, its `AGENTS.md`, its model binding — none of it changed. The wrapper is purely additive.' },
       { title: 'One origin, transparently', icon: 'globe', description: 'Every request — HTML, JS, CSS, WebSocket upgrades — proxies straight through to the real agent at the same path it asked for. No cross-origin cookie or CSP friction, because there\'s only ever one origin.' },
       { title: 'Response-body injection, not an iframe', icon: 'workflow', description: 'The branding is spliced directly into the agent\'s own HTML response via `http-proxy-middleware`\'s `responseInterceptor` — the first version used an iframe instead, and that version had a real bug (see below).' },
     ],
     callout: {
-      label: 'Lowest effort, least control',
+      label: 'What this does and doesn\'t do',
       tone: 'info',
-      body: 'This is genuinely the cheapest option to stand up — under 40 lines of code, no knowledge of the agent\'s internal API required. The trade-off is real too: you\'re decorating the existing chat UI, not replacing it. Everything past the injected banner still looks and behaves like the stock buildpack UI.',
+      body: 'This is genuinely cheap to run — under 40 lines of code, no knowledge of the agent\'s internal API required. The trade-off is real too: it decorates the existing chat UI, it doesn\'t replace it. Everything past the injected banner and theme still behaves like the stock buildpack UI underneath.',
     },
   },
   {
@@ -150,11 +150,11 @@ cf push -f manifest.yml`,
     type: 'question',
     section: SECTION,
     title: 'Where does this fall short?',
-    prompt: 'Colors turned out to be fully reachable. What\'s still out of this option\'s reach *inside* the chat experience?',
+    prompt: 'Colors turned out to be fully reachable. What\'s still out of this approach\'s reach *inside* the chat experience?',
     hints: [
       'Layout, spacing, component structure, copy — anything not expressed as a CSS variable is still the stock buildpack UI',
       'This override is only as durable as the agent\'s variable names — if a future buildpack version renames --primary or drops the shadcn convention entirely, the override silently stops working',
-      'If the real requirement goes beyond "our brand colors" to "our actual product," Option B — the fully custom frontend — is the honest next step',
+      'If the real requirement goes beyond "our brand colors" to "our actual product," a fully custom frontend talking directly to the same bound model service is the honest next step — a bigger lift, and out of scope here',
     ],
   },
 ]

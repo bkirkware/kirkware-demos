@@ -5,7 +5,7 @@ import { introSteps } from './sections/intro'
 import { agentSteps } from './sections/agent'
 import { mcpGatewaySteps } from './sections/mcpGateway'
 import { policiesSteps } from './sections/policies'
-import { uiCustomizationWrapperSteps } from './sections/uiCustomizationWrapper'
+import { uiCustomizationSteps } from './sections/uiCustomization'
 import { wrapupSteps } from './sections/wrapup'
 
 const demo: DemoDefinition = {
@@ -23,7 +23,7 @@ const demo: DemoDefinition = {
     ...agentSteps,
     ...mcpGatewaySteps,
     ...policiesSteps,
-    ...uiCustomizationWrapperSteps,
+    ...uiCustomizationSteps,
     ...wrapupSteps,
   ],
 }

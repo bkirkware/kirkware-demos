@@ -2,7 +2,7 @@
   "name": "kirkwaregpt-ui-wrapper",
   "version": "1.0.0",
   "private": true,
-  "description": "Option A: branded reverse-proxy wrapper around the KirkwareGPT agent buildpack's chat UI",
+  "description": "Branded reverse-proxy wrapper around the KirkwareGPT agent buildpack's chat UI",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
