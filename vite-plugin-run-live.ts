@@ -97,7 +97,7 @@ const KIRKWAREGPT_CREATE_MANIFEST_SCRIPT = [
   '  buildpacks:',
   '  - agent_buildpack',
   '  routes:',
-  '  - route: kirkwaregpt.apps.tanzu.kirkware.net',
+  '  - route: kirkwaregpt-agent.apps.tanzu.kirkware.net',
   'EOF',
 ].join('\n')
 

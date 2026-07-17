@@ -88,3 +88,18 @@ export const kirkwaregptPolicyFlow: DiagramDef = {
     { id: 'e-gateway-model', source: 'gateway', target: 'model', label: 'forwards call', animated: true },
   ],
 }
+
+// A branded Node.js reverse-proxy wrapper sits in front of the unmodified
+// agent, so the browser only ever talks to one origin.
+export const kirkwaregptUiWrapperFlow: DiagramDef = {
+  id: 'kirkwaregpt-ui-wrapper-flow',
+  nodes: [
+    { id: 'browser', label: 'User Browser', kind: 'client', icon: 'users', position: { x: 40, y: 340 }, width: 280 },
+    { id: 'wrapper', label: 'kirkwaregpt-ui-wrapper', sublabel: 'Node.js · Express · injects branding', kind: 'gateway', icon: 'workflow', position: { x: 680, y: 340 }, width: 340 },
+    { id: 'agent', label: 'kirkwaregpt', sublabel: 'agent_buildpack · unmodified', kind: 'platform', icon: 'bot', position: { x: 1360, y: 340 }, width: 320 },
+  ],
+  edges: [
+    { id: 'e-browser-wrapper', source: 'browser', target: 'wrapper', label: 'every request', animated: true },
+    { id: 'e-wrapper-agent', source: 'wrapper', target: 'agent', label: 'transparent proxy', animated: true },
+  ],
+}
