@@ -18,7 +18,7 @@ export const uiCustomizationSteps: DemoStep[] = [
     callout: {
       label: 'What this does and doesn\'t do',
       tone: 'info',
-      body: 'This is genuinely cheap to run — under 40 lines of code, no knowledge of the agent\'s internal API required. The trade-off is real too: it decorates the existing chat UI, it doesn\'t replace it. Everything past the injected banner and theme still behaves like the stock buildpack UI underneath.',
+      body: 'This is genuinely cheap to run — under 40 lines of code, no knowledge of the agent\'s internal API required. The trade-off is real too: it decorates the existing chat UI, it doesn\'t replace it. Everything past the injected theme, favicon, and footer notice still behaves like the stock buildpack UI underneath.',
     },
   },
   {
@@ -33,8 +33,6 @@ export const uiCustomizationSteps: DemoStep[] = [
         label: 'server.js',
         lang: 'javascript',
         code: `const AGENT_URL = process.env.AGENT_URL || 'https://kirkwaregpt-agent.apps.tanzu.kirkware.net'
-const BANNER_HTML = \`<style>body{padding-top:44px!important;}</style>
-<div style="position:fixed;top:0;...">Kirkware Assistant</div>\`
 
 // The agent's UI is Tailwind v4 + shadcn/ui — its whole color scheme is
 // ~20 CSS variables on :root/.dark. Redefining the base tokens (not the
@@ -44,6 +42,16 @@ const THEME_OVERRIDE_CSS = \`<style>
 :root{--primary:#ca8a04;--primary-foreground:#1c1917;--accent:#71717a;--ring:#ca8a04; /* ...and 12 more */}
 .dark{--primary:#eab308;--primary-foreground:#18181b;--accent:#a1a1aa;--ring:#eab308; /* ...and 12 more */}
 </style>\`
+
+// GET /favicon.svg is registered ahead of this catch-all, so it
+// short-circuits before the agent's own favicon ever gets proxied.
+
+// The chat layout is sized with Tailwind's h-dvh directly, not a
+// percentage from #root/<body> — so making room for a fixed footer means
+// shrinking that specific class, not padding the body.
+const FOOTER_HTML = \`<style>[class*="h-dvh"]{height:calc(100dvh - 32px)!important;}</style>
+<div style="position:fixed;bottom:0;...">&copy; Kirkware Enterprises. All rights reserved.
+Do not use prompts containing PII/PCI such as credit card numbers, employee IDs, etc.</div>\`
 
 // Proxy every path at the root, transparently — /assets/*, /favicon.svg,
 // WebSocket upgrades, all of it — so nothing the agent's own SPA expects
@@ -57,7 +65,7 @@ app.use('/', createProxyMiddleware({
     const contentType = proxyRes.headers['content-type'] || ''
     if (!contentType.includes('text/html')) return responseBuffer
     const html = responseBuffer.toString('utf8')
-    return html.replace(/<body[^>]*>/i, (m) => \`\${m}\${THEME_OVERRIDE_CSS}\${BANNER_HTML}\`)
+    return html.replace(/<body[^>]*>/i, (m) => \`\${m}\${THEME_OVERRIDE_CSS}\${FOOTER_HTML}\`)
   }),
 }))`,
       },
