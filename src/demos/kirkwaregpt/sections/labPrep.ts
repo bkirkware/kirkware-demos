@@ -173,6 +173,18 @@ echo $CF_SPACE`,
         code: `rm -rf "$TEMP_WORKSPACE/kirkwaregpt"`,
         liveId: 'kirkwaregpt-clean-workspace.sh',
       },
+      {
+        label: 'delete-ui-wrapper.sh',
+        lang: 'bash',
+        code: `cf delete kirkwaregpt-ui-wrapper -f`,
+        liveId: 'kirkwaregpt-ui-wrapper-delete.sh',
+      },
+      {
+        label: 'clean-ui-wrapper-workspace.sh',
+        lang: 'bash',
+        code: `rm -rf "$TEMP_WORKSPACE/tanzuagent-ui-wrapper"`,
+        liveId: 'kirkwaregpt-ui-wrapper-clean-workspace.sh',
+      },
     ],
   },
 ]
