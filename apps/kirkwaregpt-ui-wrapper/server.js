@@ -1,7 +1,7 @@
 const express = require('express')
 const { createProxyMiddleware, responseInterceptor } = require('http-proxy-middleware')
 
-const AGENT_URL = process.env.AGENT_URL || 'https://kirkwaregpt.apps.tanzu.kirkware.net'
+const AGENT_URL = process.env.AGENT_URL || 'https://kirkwaregpt-agent.apps.tanzu.kirkware.net'
 const PORT = process.env.PORT || 8080
 
 // Kirkware's "K" mark — inlined so it can be reused both as the injected

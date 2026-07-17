@@ -5,6 +5,6 @@ applications:
   memory: 256M
   instances: 1
   env:
-    AGENT_URL: https://kirkwaregpt.apps.tanzu.kirkware.net
+    AGENT_URL: https://kirkwaregpt-agent.apps.tanzu.kirkware.net
   routes:
-  - route: kirkwaregpt-ui-wrapper.apps.tanzu.kirkware.net
+  - route: kirkwaregpt.apps.tanzu.kirkware.net

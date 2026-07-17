@@ -48,7 +48,7 @@ applications:
   buildpacks:
   - agent_buildpack
   routes:
-  - route: kirkwaregpt.apps.tanzu.kirkware.net
+  - route: kirkwaregpt-agent.apps.tanzu.kirkware.net
 EOF`,
         liveId: 'kirkwaregpt-create-manifest.sh',
       },
