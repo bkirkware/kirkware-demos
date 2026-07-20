@@ -144,6 +144,18 @@ echo $CF_SPACE`,
         liveId: 'kirkwaregpt-delete-model.sh',
       },
       {
+        label: 'delete-pci-model.sh',
+        lang: 'bash',
+        code: `cf delete-service kirkwaregpt-pci-model -f --wait`,
+        liveId: 'kirkwaregpt-delete-pci-model.sh',
+      },
+      {
+        label: 'delete-presidio.sh',
+        lang: 'bash',
+        code: `cf delete presidio-content-filter -f`,
+        liveId: 'presidio-delete.sh',
+      },
+      {
         label: 'unbind-and-delete-postgres.sh',
         lang: 'bash',
         code: `cf delete-service kirkwaregpt-db -f --wait`,

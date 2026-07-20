@@ -1,0 +1,8 @@
+applications:
+- name: presidio-content-filter
+  buildpacks:
+  - python_buildpack
+  memory: 1G
+  instances: 1
+  routes:
+  - route: presidio.apps.tanzu.kirkware.net

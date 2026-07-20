@@ -25,3 +25,8 @@ dist-ssr
 .env
 .env-*
 tmp/*
+
+# Python (apps/presidio-content-filter)
+__pycache__/
+*.pyc
+.venv/

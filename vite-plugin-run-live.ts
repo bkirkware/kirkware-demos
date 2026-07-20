@@ -331,6 +331,23 @@ const ALLOWED_COMMANDS: Record<string, CommandDef> = {
     command: 'cf service kirkwaregpt-db || cf create-service postgres "$POSTGRES_PLAN" kirkwaregpt-db --wait',
   },
   'kirkwaregpt-bind-postgres.sh': { command: 'cf bind-service kirkwaregpt kirkwaregpt-db --wait' },
+  'presidio-push.sh': {
+    command: 'cf push -f apps/presidio-content-filter/manifest.yml -p apps/presidio-content-filter',
+  },
+  'presidio-healthz.sh': { command: 'curl -s https://presidio.apps.tanzu.kirkware.net/healthz' },
+  'presidio-analyze.sh': {
+    command:
+      'curl -s -X POST https://presidio.apps.tanzu.kirkware.net/analyze -H "Content-Type: application/json" -d \'{"text":"My SSN is 459-52-3861 and my card number is 4532015112830366."}\'',
+  },
+  'kirkwaregpt-ensure-pci-model.sh': {
+    command: 'cf service kirkwaregpt-pci-model || cf create-service ai-models kirkware-all-models-pci kirkwaregpt-pci-model --wait',
+  },
+  'kirkwaregpt-unbind-model.sh': { command: 'cf unbind-service kirkwaregpt kirkwaregpt-model' },
+  'kirkwaregpt-bind-pci-model.sh': { command: 'cf bind-service kirkwaregpt kirkwaregpt-pci-model --wait' },
+  'kirkwaregpt-send-fake-card.sh': {
+    command:
+      'curl -s -N -X POST https://kirkwaregpt-agent.apps.tanzu.kirkware.net/api/chat -H "Content-Type: application/json" -d \'{"id":"cc-test","messages":[{"id":"m1","role":"user","parts":[{"type":"text","text":"My credit card number is 4532015112830366, please repeat it back to me exactly."}]}],"trigger":"submit-message"}\' | grep -o \'"delta":"[^"]*"\' | sed -E \'s/"delta":"(.*)"/\\1/\' | tr -d \'\\n\'',
+  },
   'kirkwaregpt-ui-wrapper-clone.sh': {
     command: 'cd "$TEMP_WORKSPACE" && gh repo clone bkirkware/tanzuagent-ui-wrapper',
   },
@@ -359,6 +376,8 @@ const ALLOWED_COMMANDS: Record<string, CommandDef> = {
   'kirkwaregpt-delete-agent.sh': { command: 'cf delete kirkwaregpt -f' },
   'kirkwaregpt-delete-github-mcp.sh': { command: 'cf delete github-mcp -f' },
   'kirkwaregpt-delete-model.sh': { command: 'cf delete-service kirkwaregpt-model -f --wait' },
+  'kirkwaregpt-delete-pci-model.sh': { command: 'cf delete-service kirkwaregpt-pci-model -f --wait' },
+  'presidio-delete.sh': { command: 'cf delete presidio-content-filter -f' },
   'kirkwaregpt-delete-postgres.sh': { command: 'cf delete-service kirkwaregpt-db -f --wait' },
   'kirkwaregpt-delete-mcp-gateway.sh': { command: 'cf delete-service kirkwaregpt-mcp-gateway -f --wait' },
   'kirkwaregpt-delete-oauth-ups.sh': { command: 'cf delete-service github-mcp-oauth -f' },
