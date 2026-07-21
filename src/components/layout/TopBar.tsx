@@ -1,4 +1,4 @@
-import { FlaskConical, Settings as SettingsIcon, Sparkles } from 'lucide-react'
+import { FlaskConical, PanelLeft, PanelLeftClose, Settings as SettingsIcon, Sparkles } from 'lucide-react'
 import { useDemoStore } from '@/store/demoStore'
 import { useViewStore, type AppView } from '@/store/viewStore'
 import { useEnvVarsStore } from '@/store/envVarsStore'
@@ -22,6 +22,8 @@ export function TopBar() {
   const stepIndex = useDemoStore((s) => s.currentStepIndex)
   const view = useViewStore((s) => s.view)
   const setView = useViewStore((s) => s.setView)
+  const sidebarCollapsed = useViewStore((s) => s.sidebarCollapsed)
+  const toggleSidebar = useViewStore((s) => s.toggleSidebar)
   const envVars = useEnvVarsStore((s) => s.vars)
   const cfOrg = displayValue(envVars.CF_ORG)
   const cfSpace = displayValue(envVars.CF_SPACE)
@@ -29,6 +31,15 @@ export function TopBar() {
   return (
     <header className="glass-panel relative z-30 flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-5">
       <div className="flex items-center gap-4 min-w-0">
+        {view === 'demo' && demo && (
+          <button
+            onClick={toggleSidebar}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/10 hover:text-slate-200"
+            title={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+          >
+            {sidebarCollapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
+          </button>
+        )}
         <button
           onClick={() => setView('demo')}
           className="flex items-center gap-2 shrink-0"
