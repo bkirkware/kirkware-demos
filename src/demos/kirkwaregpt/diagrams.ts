@@ -79,13 +79,13 @@ export const kirkwaregptPolicyFlow: DiagramDef = {
   nodes: [
     { id: 'client', label: 'KirkwareGPT Users', kind: 'client', icon: 'users', position: { x: 40, y: 340 }, width: 300 },
     { id: 'gateway', label: 'AI Services Gateway', sublabel: 'rate limits · quotas', kind: 'gateway', icon: 'shield', position: { x: 740, y: 340 }, width: 340 },
-    { id: 'webhook', label: 'Webhook Policy', sublabel: 'credit-card filter (preview)', kind: 'security', icon: 'shield-check', position: { x: 1440, y: 140 }, width: 340 },
-    { id: 'model', label: 'claude-sonnet-4-6', sublabel: 'kirkware-all-models plan', kind: 'model', icon: 'bot', position: { x: 1440, y: 460 }, width: 340 },
+    { id: 'webhook', label: 'presidio-content-filter', sublabel: 'masks SSNs + credit cards', kind: 'security', icon: 'shield-check', position: { x: 1440, y: 140 }, width: 340 },
+    { id: 'model', label: 'qwen3.6-35b (or any bound model)', sublabel: 'kirkware-all-models-pci plan', kind: 'model', icon: 'bot', position: { x: 1440, y: 460 }, width: 340 },
   ],
   edges: [
     { id: 'e-client-gateway', source: 'client', target: 'gateway', label: 'chat request', animated: true },
-    { id: 'e-gateway-webhook', source: 'gateway', target: 'webhook', label: 'inspects body', dashed: true },
-    { id: 'e-gateway-model', source: 'gateway', target: 'model', label: 'forwards call', animated: true },
+    { id: 'e-gateway-webhook', source: 'gateway', target: 'webhook', label: 'prompt + response body', dashed: true },
+    { id: 'e-gateway-model', source: 'gateway', target: 'model', label: 'forwards masked call', animated: true },
   ],
 }
 
