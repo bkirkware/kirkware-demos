@@ -6,10 +6,11 @@ import { runLivePlugin } from './vite-plugin-run-live.ts'
 import { envSettingsPlugin } from './vite-plugin-env-settings.ts'
 import { editScriptPlugin } from './vite-plugin-edit-script.ts'
 import { envProfilesPlugin } from './vite-plugin-env-profiles.ts'
+import { demoContentPlugin } from './vite-plugin-demo-content.ts'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), runLivePlugin(), envSettingsPlugin(), editScriptPlugin(), envProfilesPlugin()],
+  plugins: [react(), tailwindcss(), runLivePlugin(), envSettingsPlugin(), editScriptPlugin(), envProfilesPlugin(), demoContentPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

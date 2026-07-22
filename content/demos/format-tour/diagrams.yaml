@@ -1,0 +1,36 @@
+pipeline:
+  groups:
+    - id: app
+      label: The App
+      position: { x: 340, y: 40 }
+      size: { width: 320, height: 200 }
+  nodes:
+    - id: markdown
+      label: Markdown files
+      sublabel: content/demos/<id>/
+      kind: data
+      icon: file-text
+      position: { x: 40, y: 100 }
+    - id: pipeline
+      label: Content pipeline
+      sublabel: parse + validate
+      kind: service
+      icon: workflow
+      position: { x: 380, y: 100 }
+      group: app
+    - id: renderer
+      label: Step renderer
+      sublabel: React views
+      kind: platform
+      icon: play
+      position: { x: 680, y: 100 }
+  edges:
+    - id: e-md-pipeline
+      source: markdown
+      target: pipeline
+      label: virtual modules
+      animated: true
+    - id: e-pipeline-renderer
+      source: pipeline
+      target: renderer
+      label: DemoDefinition

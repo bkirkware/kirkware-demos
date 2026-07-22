@@ -30,12 +30,14 @@ import {
   Workflow,
   type LucideProps,
 } from 'lucide-react'
+import type { ComponentType } from 'react'
 import { CloudFoundryIcon } from './icons/CloudFoundryIcon'
 import { SpringAiIcon } from './icons/SpringAiIcon'
 import { SpringLeafIcon } from './icons/SpringLeafIcon'
 import { TanzuIcon } from './icons/TanzuIcon'
+import type { IconName } from './iconNames'
 
-export const iconRegistry = {
+export const iconRegistry: Record<IconName, ComponentType<LucideProps>> = {
   activity: Activity,
   'bar-chart': BarChart3,
   bot: Bot,
@@ -69,9 +71,9 @@ export const iconRegistry = {
   users: Users,
   waypoints: Waypoints,
   workflow: Workflow,
-} as const
+}
 
-export type IconName = keyof typeof iconRegistry
+export type { IconName }
 
 export function Icon({ name, ...props }: { name: string } & LucideProps) {
   const Component = iconRegistry[name as IconName] ?? Sparkles

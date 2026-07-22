@@ -1,4 +1,5 @@
 import type { DemoDefinition } from '@/types/demo'
+import { demoRegistry as markdownDemos } from 'virtual:demo-registry'
 
 export interface DemoRegistryEntry {
   id: string
@@ -44,4 +45,11 @@ export const demoRegistry: DemoRegistryEntry[] = [
     tags: ['Spring', 'Tanzu Platform', 'Modernization'],
     load: () => import('./app-assessment'),
   },
+  // Markdown-authored demos (content/demos/*) follow the TS demos above
+  // while migration is in progress; the two lists merge into one picker.
+  ...markdownDemos,
 ]
+
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  window.__DEMO_REGISTRY__ = demoRegistry
+}

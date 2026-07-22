@@ -63,3 +63,19 @@ export const useDemoStore = create<DemoStoreState>((set, get) => ({
     }
   },
 }))
+
+// Dev-only: markdown demo modules (virtual:demo/<id>) self-accept HMR updates
+// and hand the fresh definition here, so editing a content file updates the
+// running presentation in place — same demo, same step, no App remount.
+if (import.meta.hot) {
+  // Lets tooling (scripts/screenshot-steps.ts) drive the presenter directly.
+  window.__DEMO_STORE__ = useDemoStore
+  window.__DEMO_CONTENT_HOT__ = (id, demo) => {
+    const { currentDemoId, currentStepIndex } = useDemoStore.getState()
+    if (currentDemoId !== id) return
+    useDemoStore.setState({
+      currentDemo: demo,
+      currentStepIndex: Math.min(currentStepIndex, demo.steps.length - 1),
+    })
+  }
+}
