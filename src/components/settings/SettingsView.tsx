@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { AlertTriangle, CheckCircle2, Copy, Eye, EyeOff, Info, Loader2, Pencil, Plus, Save, Trash2 } from 'lucide-react'
 import { useEnvVarsStore } from '@/store/envVarsStore'
 import { useEnvProfilesStore } from '@/store/envProfilesStore'
-import { useEditModeStore } from '@/store/editModeStore'
 
 interface EnvRow {
   id: number
@@ -22,8 +21,6 @@ function makeRow(key: string, value: string, sensitive: boolean): EnvRow {
 const KEY_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/
 
 export function SettingsView() {
-  const editsEnabled = useEditModeStore((s) => s.enabled)
-  const setEditsEnabled = useEditModeStore((s) => s.setEnabled)
   const [rows, setRows] = useState<EnvRow[]>([])
   const [source, setSource] = useState<EnvSource>('none')
   const [loading, setLoading] = useState(true)
@@ -156,32 +153,19 @@ export function SettingsView() {
           <code className="rounded bg-white/10 px-1 py-0.5 font-mono text-xs">env.masked</code>.
         </p>
 
-        <div className="mt-6 flex items-start justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.02] p-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-300">
-              <Pencil size={15} />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-slate-100">Enable Edits</div>
-              <p className="mt-0.5 text-xs text-slate-400">
-                Show Edit buttons on scripts and text throughout the app, so you can tweak a demo live and save the
-                changes back to its source file. Off by default to keep the presentation clean.
-              </p>
-            </div>
+        <div className="mt-6 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-4">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-300">
+            <Pencil size={15} />
           </div>
-          <button
-            role="switch"
-            aria-checked={editsEnabled}
-            onClick={() => setEditsEnabled(!editsEnabled)}
-            className={`relative h-6 w-11 shrink-0 rounded-full transition ${editsEnabled ? 'bg-cyan-400' : 'bg-white/15'}`}
-            type="button"
-          >
-            <span
-              className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition ${
-                editsEnabled ? 'translate-x-5' : 'translate-x-0'
-              }`}
-            />
-          </button>
+          <div>
+            <div className="text-sm font-semibold text-slate-100">Editing demo content</div>
+            <p className="mt-0.5 text-xs text-slate-400">
+              Demos live as markdown in{' '}
+              <code className="rounded bg-white/10 px-1 py-0.5 font-mono text-xs">content/demos/</code> — edit the
+              files in any editor and, while <code className="rounded bg-white/10 px-1 py-0.5 font-mono text-xs">npm run dev</code>{' '}
+              is running, the presentation updates in place without losing your current step.
+            </p>
+          </div>
         </div>
 
         {source === 'example' && (

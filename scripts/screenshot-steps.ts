@@ -83,8 +83,9 @@ try {
     fs.mkdirSync(dir, { recursive: true })
     for (let i = 0; i < steps.length; i++) {
       await page.evaluate((index) => window.__DEMO_STORE__!.getState().goToStep(index), i)
-      // Let framer-motion transitions (already reduced) and diagram auto-fit settle.
-      await page.waitForTimeout(400)
+      // Let framer-motion transitions and diagram auto-fit fully settle —
+      // staggered card/code-block entrances run to ~800ms after a step change.
+      await page.waitForTimeout(1100)
       await page.screenshot({ path: path.join(dir, `${String(i).padStart(3, '0')}-${steps[i].id}.png`) })
     }
     console.log(`  ${demoId}: ${steps.length} steps`)

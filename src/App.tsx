@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useDemoStore } from '@/store/demoStore'
+import { restorePosition, useDemoStore } from '@/store/demoStore'
 import { useViewStore } from '@/store/viewStore'
 import { useEnvVarsStore } from '@/store/envVarsStore'
 import { demoRegistry } from '@/demos/registry'
@@ -19,7 +19,14 @@ function App() {
   const view = useViewStore((s) => s.view)
 
   useEffect(() => {
-    if (demoRegistry[0]) loadDemo(demoRegistry[0].id)
+    // Resume where the presenter left off (survives refresh and dev-server
+    // full reloads); otherwise start with the first registered demo.
+    const saved = restorePosition()
+    if (saved && demoRegistry.some((d) => d.id === saved.id)) {
+      loadDemo(saved.id, saved.step)
+    } else if (demoRegistry[0]) {
+      loadDemo(demoRegistry[0].id)
+    }
   }, [loadDemo])
 
   useEffect(() => {

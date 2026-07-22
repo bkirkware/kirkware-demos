@@ -4,13 +4,12 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 import { runLivePlugin } from './vite-plugin-run-live.ts'
 import { envSettingsPlugin } from './vite-plugin-env-settings.ts'
-import { editScriptPlugin } from './vite-plugin-edit-script.ts'
 import { envProfilesPlugin } from './vite-plugin-env-profiles.ts'
 import { demoContentPlugin } from './vite-plugin-demo-content.ts'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), runLivePlugin(), envSettingsPlugin(), editScriptPlugin(), envProfilesPlugin(), demoContentPlugin()],
+  plugins: [react(), tailwindcss(), runLivePlugin(), envSettingsPlugin(), envProfilesPlugin(), demoContentPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -24,17 +23,11 @@ export default defineConfig({
       // restart-on-env-file-change would otherwise drop the browser's
       // connection mid-request every time that happens.
       //
-      // src/demos: these are plain data modules (arrays of DemoStep
-      // objects), not React components, so editing them has no HMR
-      // boundary of their own — the invalidation propagates all the way up
-      // through registry.ts -> demoStore.ts -> App.tsx, and React Fast
-      // Refresh remounts App, re-running its mount effect that loads the
-      // *first* demo and resetting whatever the user was looking at. The
-      // in-line script editor already reflects saves via local component
-      // state without needing a reload, so watching these files buys
-      // nothing but a jarring reset — a manual browser refresh still picks
-      // up on-disk edits made outside the app.
-      ignored: ['**/.env', '**/.env-*', '**/src/demos/**'],
+      // Demo content (content/demos/**) is deliberately watched:
+      // vite-plugin-demo-content.ts turns edits into targeted HMR updates
+      // that swap the definition in the demo store without remounting the
+      // app or losing the presenter's current step.
+      ignored: ['**/.env', '**/.env-*'],
     },
   },
 })
