@@ -138,6 +138,28 @@ describe('parseSection', () => {
     expect(() => parseSection('f.md', wrap('## diagram: D\n---\ndiagram: m\nshow: [a]\nadd: [b]\n---\n### H'))).toThrow(/`show:` replaces/)
   })
 
+  it('skips HTML comments outside fences but keeps them inside code', () => {
+    const md = [
+      '<!-- author note: not content -->',
+      '## content: X',
+      '### H',
+      '',
+      '<!--',
+      'multi-line note',
+      '-->',
+      'Real body.',
+      '',
+      '## command: C',
+      '### H2',
+      '```html',
+      '<!-- this stays in the code -->',
+      '```',
+    ].join('\n')
+    const { steps } = parseSection('f.md', wrap(md))
+    expect(steps[0].fields['body']).toBe('Real body.')
+    expect((steps[1].fields['commands'] as { code: string }[])[0].code).toBe('<!-- this stays in the code -->')
+  })
+
   it('reports the file and line for errors', () => {
     try {
       parseSection('sections/20-demo.md', wrap('## content: X\n### H\n\n> [!nope] Bad\n> body'))

@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "validate:content": "tsx scripts/validate-content.ts",
-    "screenshots": "tsx scripts/screenshot-steps.ts"
+    "screenshots": "tsx scripts/screenshot-steps.ts",
+    "new-demo": "tsx scripts/new-demo.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.2",

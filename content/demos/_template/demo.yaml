@@ -1,0 +1,8 @@
+# Folder name = demo id. Underscore-prefixed folders never appear in the app.
+title: My New Demo
+subtitle: One sentence on what this demo proves
+tags: [Tanzu Platform]
+# Hex accent used for gradients/highlights in this demo
+accent: "#22d3ee"
+# Picker position — lower sorts first (existing demos use 10..50)
+order: 500

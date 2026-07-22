@@ -1,0 +1,24 @@
+# Diagrams referenced by `diagram:` in diagram steps. Delete this file if the
+# demo has none. Node `kind` picks the color theme: client, gateway, service,
+# model, data, security, observability, external, platform.
+# Icons come from src/components/ui/iconNames.ts.
+example-flow:
+  nodes:
+    - id: app
+      label: Your App
+      sublabel: cf push
+      kind: client
+      icon: rocket
+      position: { x: 40, y: 100 }
+    - id: service
+      label: A Service
+      sublabel: bound via marketplace
+      kind: service
+      icon: boxes
+      position: { x: 380, y: 100 }
+  edges:
+    - id: e-app-service
+      source: app
+      target: service
+      label: binds
+      animated: true

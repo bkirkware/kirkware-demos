@@ -145,9 +145,24 @@ export function parseSection(file: string, source: string): ParsedSection {
     quoteRun = null
   }
 
+  let inComment = false
   for (let i = fmEnd + 1; i < lines.length; i++) {
     const line = lines[i]
     const lineNo = i + 1
+
+    // HTML comments (outside fences) are author notes — skipped entirely.
+    // Only line-anchored comments are recognized: `<!--` at the start of a
+    // line through the next line containing `-->`.
+    if (!openFence) {
+      if (inComment) {
+        if (line.includes('-->')) inComment = false
+        continue
+      }
+      if (line.trimStart().startsWith('<!--')) {
+        if (!line.includes('-->')) inComment = true
+        continue
+      }
+    }
 
     if (openFence) {
       const close = /^(`{3,})\s*$/.exec(line)
