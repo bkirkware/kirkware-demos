@@ -2,83 +2,64 @@
 section: Gateway & Wire Formats
 ---
 
-## content: One gateway, many wire formats {#gw-intro}
+## content: Two independent layers {#gw-intro}
 ---
 source: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/ai-services/10-4/ai/explanation-understanding-wire-format.html
 ---
 
-### It's not a lowest-common-denominator gateway
+### Not a lowest-common-denominator gateway
 
-Two independent layers matter here: the **client-facing wire format** (what your app sends) and the **backend wire format** (hardcoded per provider). ai-server translates between them — and, critically, doesn't strip fields it doesn't recognize.
+The **client wire format** (what your app sends) and the **backend wire format** (per provider) are independent — ai-server translates between them without stripping fields it doesn't recognize.
 
-- icon:braces **OpenAI API Plans** — Base URL `{api_base}/openai` — `POST /v1/chat/completions`, `POST /v1/embeddings`, `GET /v1/models`. Config reports `"wireFormat": "OPENAI"`.
-- icon:sparkles **Anthropic API Plans** — Experimental as of 10.4.2 — base URL `{api_base}/anthropic`, `POST /v1/messages`. Requires the `experimental-anthropic-wireformat` Active Profile.
+| Wire format | Base URL | Status |
+| --- | --- | --- |
+| OpenAI | `{api_base}/openai` → `/v1/chat/completions`, `/v1/embeddings`, `/v1/models` | Default, GA |
+| Anthropic | `{api_base}/anthropic` → `/v1/messages` | Experimental (10.4.2+) |
 
 ## diagram: OpenAI-shaped client {#gw-diagram-1}
 ---
 diagram: gateway-wire-format
-visibleNodeIds:
-  - client-openai
-  - wf-gateway
-visibleEdgeIds:
-  - e-openai-gw
-activeNodeIds:
-  - client-openai
+show: [client-openai, wf-gateway, e-openai-gw]
+active: [client-openai]
 source: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/ai-services/10-4/ai/explanation-understanding-wire-format.html
 ---
 
-### Step 1 — the default: OpenAI wire format
+### The default: OpenAI wire format
 
-Any OpenAI SDK, or plain curl, talks to `/openai/v1/chat/completions` — the default wire format for every plan.
+Any OpenAI SDK — or plain curl — talks to `/openai/v1/chat/completions` on every plan.
 
-## diagram: Gateway → backend model {#gw-diagram-2}
+## diagram: Gateway → backend {#gw-diagram-2}
 ---
 diagram: gateway-wire-format
-visibleNodeIds:
-  - client-openai
-  - wf-gateway
-  - wf-model
-visibleEdgeIds:
-  - e-openai-gw
-  - e-gw-model
-activeNodeIds:
-  - wf-model
+add: [wf-model, e-gw-model]
+active: [wf-model]
 source: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/ai-services/10-4/ai/explanation-understanding-wire-format.html
 ---
 
-### Step 2 — ai-server speaks the backend’s native protocol
+### ai-server speaks the backend's native protocol
 
-Behind the gateway, ai-server calls whichever backend is actually bound to the plan — a vLLM/Ollama Worker VM, or a provider-native call to OpenAI, Bedrock, Azure, Vertex, or Anthropic. The client never needs to know which.
+Behind the gateway: a vLLM/Ollama Worker VM, or a provider-native call to OpenAI, Bedrock, Azure, Vertex, or Anthropic. The client never knows which.
 
 ## diagram: Anthropic-shaped client {#gw-diagram-3}
 ---
 diagram: gateway-wire-format
-visibleNodeIds:
-  - client-openai
-  - wf-gateway
-  - wf-model
-  - client-anthropic
-visibleEdgeIds:
-  - e-openai-gw
-  - e-gw-model
-  - e-anthropic-gw
-activeNodeIds:
-  - client-anthropic
+add: [client-anthropic, e-anthropic-gw]
+active: [client-anthropic]
 source: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/ai-services/10-4/ai/how-to-guides-create-a-plan-using-the-anthropic-api.html
 ---
 
-### Step 3 — the same model, a second wire contract
+### Same plan, second wire contract
 
-Enable the `experimental-anthropic-wireformat` Active Profile and the exact same plan is now reachable via Anthropic's Messages API too — one backend, multiple client SDKs.
+Enable the `experimental-anthropic-wireformat` Active Profile and the same plan answers Anthropic's Messages API too — one backend, multiple client SDKs.
 
-## command: Vendor-specific params {#gw-cmd-vendor}
+## command: Pass vendor params {#gw-cmd-vendor}
 ---
 source: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/ai-services/10-4/ai/how-to-guides-sending-non-openAI-parameters.html
 ---
 
-### Passing provider-specific parameters through
+### Provider-specific knobs survive the trip
 
-The gateway is a passthrough, not a strict schema validator — unknown fields survive the trip. That means you can use provider-specific knobs, like Gemini's `topK`, while keeping the OpenAI SDK shape.
+The gateway is a passthrough, not a schema validator — Gemini's `topK` rides along inside an OpenAI-shaped request.
 
 ```bash label=curl
 curl "$OPENAI_API_BASE/v1/chat/completions" \
@@ -109,16 +90,16 @@ response = client.chat.completions.create(
 ```
 
 > [!impact]
-> `topK` isn't part of the OpenAI chat-completions schema at all — Gemini invented it. The gateway forwards it untouched, so you get Gemini's actual behavior without giving up the OpenAI SDK's ergonomics.
+> `topK` isn't in the OpenAI schema at all — Gemini invented it. The gateway forwards it untouched: Gemini's real behavior, the OpenAI SDK's ergonomics.
 
-## command: Anthropic Messages API {#gw-cmd-anthropic}
+## command: Call Anthropic's API {#gw-cmd-anthropic}
 ---
 source: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/ai-services/10-4/ai/how-to-guides-create-a-plan-using-the-anthropic-api.html
 ---
 
-### Calling the same plan via Anthropic’s SDK
+### The same plan via Anthropic's SDK
 
-First flip on the experimental profile in Ops Manager (Advanced Config → Active Profiles), then call `/anthropic/v1/messages` directly, or through the Anthropic Python SDK pointed at the gateway as its base URL.
+Flip the experimental profile in Ops Manager (Advanced Config → Active Profiles), then call `/anthropic/v1/messages` — directly, or through the Anthropic Python SDK.
 
 ```text label="Active Profiles (before → after)"
 Before: ga-providers,ga-rules,config-api,manage-ui,audit
@@ -158,4 +139,4 @@ print(message.content[0].text)
 ```
 
 > [!impact]
-> The exact same platform-hosted model now answers through a completely different wire contract. Nothing about the model or the plan changed — only which SDK the app team wanted to use.
+> Same platform-hosted model, different wire contract — nothing changed but the SDK the app team wanted. Since 10.4.3, the Anthropic API's default response length is 8192 tokens.

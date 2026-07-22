@@ -1,24 +1,24 @@
 ---
-section: Getting Started
+section: First Model Call
 ---
 
-## content: Discover & call a model {#gs-intro}
----
-source: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/ai-services/10-4/ai/how-to-guides-discover-models-and-send-openai-requests-to-them.html
----
-
-### From `cf marketplace` to a real response
-
-This is the fastest way to prove the platform works: provision a plan, pull credentials with a service key (no app deploy required), and hit the OpenAI-compatible endpoints directly with curl.
-
-## command: Provision & get credentials {#gs-cmd-1}
+## content: Why this is fast {#gs-intro}
 ---
 source: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/ai-services/10-4/ai/how-to-guides-discover-models-and-send-openai-requests-to-them.html
 ---
 
-### Provision a plan and pull credentials
+### Marketplace to real response, no app deploy
 
-First, see what's on the marketplace, then create a service instance and a service key — the key gives us credentials without deploying an app.
+The fastest proof the platform works: provision a plan, pull credentials with a service key, curl the OpenAI-compatible endpoints.
+
+## command: Provision a model {#gs-cmd-1}
+---
+source: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/ai-services/10-4/ai/how-to-guides-discover-models-and-send-openai-requests-to-them.html
+---
+
+### Provision a plan, pull credentials
+
+A service key hands back credentials without deploying an app.
 
 ```bash label=marketplace.sh live=marketplace.sh
 cf marketplace -e ai-models
@@ -66,16 +66,16 @@ Getting key kirkware-all-models for service instance kirkware-all-models as admi
 ```
 
 > [!impact]
-> No app was pushed. `cf service-key` alone hands back everything needed to call the model — `openai_api_base` and `api_key` — which is exactly what you would otherwise read out of `VCAP_SERVICES` inside a bound app.
+> No app was pushed. `cf service-key` alone returned `openai_api_base` and `api_key` — the same values a bound app would read from `VCAP_SERVICES`.
 
-## command: List, chat, embed {#gs-cmd-2}
+## command: Chat & embed {#gs-cmd-2}
 ---
 source: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/ai-services/10-4/ai/how-to-guides-discover-models-and-send-openai-requests-to-them.html
 ---
 
-### Call the OpenAI-compatible endpoints
+### Standard OpenAI shapes, any backend
 
-With those credentials in hand, list the models actually available on this plan, then send a chat completion and an embedding request — standard OpenAI request/response shapes, regardless of what backend is serving them.
+List the plan's models, send a chat completion, send an embedding — the request shape never changes.
 
 ```bash label=list-models.sh live=list-models.sh
 curl -H "Authorization: Bearer $API_KEY" "$OPENAI_API_BASE/v1/models"
@@ -137,4 +137,4 @@ curl -H "Content-Type: application/json" \
 ```
 
 > [!impact]
-> Three different capabilities — listing, chat, and embeddings — through one consistent OpenAI-shaped API, no matter whether `llama3.2:1b` is running on a Worker VM down the hall or `gemini-2.0-flash-lite-001` is being proxied from Google Vertex AI.
+> Three capabilities, one OpenAI-shaped API — whether `llama3.2:1b` runs on a Worker VM down the hall or `gemini-2.0-flash-lite-001` is proxied from Vertex AI.

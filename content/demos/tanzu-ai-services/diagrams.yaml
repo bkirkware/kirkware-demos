@@ -65,7 +65,7 @@ system-architecture:
       position: { x: 800, y: 680 }
     - id: external
       label: Off-Platform Models
-      sublabel: OpenAI · Bedrock · Azure · Vertex · Anthropic
+      sublabel: OpenAI · Bedrock · Azure · Vertex · Anthropic · HF
       kind: external
       icon: cloud
       position: { x: 1620, y: 680 }

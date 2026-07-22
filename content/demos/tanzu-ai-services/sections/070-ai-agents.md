@@ -5,23 +5,26 @@ section: AI Agents
 ## content: Zero-code chat agents {#agent-intro}
 ---
 source: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/ai-services/10-4/ai/tutorials-deploy-an-ai-agent.html
+links:
+  - label: Spring AI
+    url: https://spring.io/projects/spring-ai
 ---
 
-### The AI Agent buildpack
+### The Agent Buildpack
 
-`agent_buildpack` (Technical Preview) turns any pushed app into a chat-UI agent. Write an `AGENTS.md` describing the agent's system prompt, `cf push`, then bind a model plan — no application code required at all.
+`agent_buildpack` (Technical Preview) turns a pushed app into a chat-UI agent: write an `AGENTS.md` system prompt, `cf push`, bind a model plan. No application code.
 
 > [!info] Spring AI, for comparison
-> If you'd rather write the app yourself, `java-cfenv` v3.2.0+ auto-wires a Spring AI app straight from `VCAP_SERVICES`: `cf create-service ai-models llama3.1 my-llama3.1` → `cf bind-service my-spring-ai-app my-llama3.1` → `cf restage` — no manual credential parsing in code.
+> Prefer writing the app yourself? `java-cfenv` v3.2.0+ auto-wires Spring AI straight from `VCAP_SERVICES` — create, bind, restage, no credential parsing.
 
-## command: Deploy an agent live {#agent-cmd-deploy}
+## command: Deploy an agent {#agent-cmd-deploy}
 ---
 source: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/ai-services/10-4/ai/tutorials-deploy-an-ai-agent.html
 ---
 
-### Push, bind a model, bind an MCP tool
+### Push, bind a model, bind a tool
 
-This is the single highest-impact live moment in the whole platform: a chat UI appears with zero app code, and gains tool-calling ability the moment you bind an MCP server.
+The highest-impact live moment on the platform: a chat UI from zero code, gaining tools the moment an MCP server is bound.
 
 ```bash label=setup
 mkdir my-agent && cd my-agent
@@ -57,7 +60,6 @@ memory usage:      256M
 ```
 
 ```bash label=bind-model
-cf marketplace -e ai-models
 cf create-service ai-models all-models my-agent-model
 cf bind-service my-agent my-agent-model
 cf restage my-agent
@@ -93,12 +95,12 @@ my-agent.apps.demo.example.com now shows GitHub tools in the chat UI.
 ```
 
 > [!impact]
-> Two restages, zero lines of application code: first the agent goes from "degraded mode" to a working chat model, then from a plain chatbot to a tool-using agent with live GitHub access — purely through `cf bind-service`.
+> Two restages, zero lines of code: degraded mode → working chat model → tool-using agent with live GitHub access, purely through `cf bind-service`.
 
 ## discussion: What would you automate? {#agent-discussion}
 
-If deploying a working chat agent takes two `cf push` cycles and no code, what internal tool would your team wire up first?
+If a working chat agent takes two `cf push` cycles and no code — what internal tool does your team wire up first?
 
-- Internal MCP servers over existing REST APIs turn any legacy service into an agent tool with no rewrite
-- The buildpack is Technical Preview — great for prototyping, evaluate GA timing for production commitments
-- Binding credentials are self-describing (`config_url` returns live model + wire-format info), so agents can adapt if the bound plan changes
+- An MCP server over an existing REST API turns any legacy service into an agent tool, no rewrite
+- The buildpack is Technical Preview — prototype now, evaluate GA timing for production
+- Bindings are self-describing (`config_url` returns live model + wire-format info), so agents adapt when the plan changes

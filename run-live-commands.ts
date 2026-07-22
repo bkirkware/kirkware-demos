@@ -236,6 +236,12 @@ const KIRKWAREGPT_BIND_GATEWAY_SCRIPT = [
 
 export const ALLOWED_COMMANDS: Record<string, CommandDef> = {
   'marketplace.sh': { command: 'cf marketplace -e ai-models' },
+  'cleanup-ai-service-key.sh': {
+    command: 'cf delete-service-key kirkware-all-models kirkware-all-models -f',
+  },
+  'cleanup-ai-service.sh': {
+    command: 'cf delete-service kirkware-all-models -f --wait',
+  },
   'service-key.sh': {
     command: 'cf service-key kirkware-all-models kirkware-all-models',
     captures: captureServiceKeyCredentials,
