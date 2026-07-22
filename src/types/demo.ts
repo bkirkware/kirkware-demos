@@ -9,6 +9,13 @@ export interface DemoMeta {
   accent?: string
 }
 
+/** A labeled link-out chip (Broadcom TechDocs, Spring.io, …) under the step header. */
+export interface DemoLink {
+  label: string
+  /** Supports `$VAR` / `${VAR}` env-var interpolation, like narrative text. */
+  url: string
+}
+
 interface DemoStepBase {
   id: string
   type: StepType
@@ -16,6 +23,8 @@ interface DemoStepBase {
   section: string
   /** Short label shown in the sidebar step list */
   title: string
+  /** Reference links rendered as chips alongside the step's heading. */
+  links?: DemoLink[]
 }
 
 export interface TitleStep extends DemoStepBase {
@@ -24,6 +33,11 @@ export interface TitleStep extends DemoStepBase {
   heading: string
   subheading?: string
   bullets?: string[]
+  /**
+   * `section` renders as a section-divider slide: numbered, oversized
+   * heading with the bullets as an agenda chip row.
+   */
+  variant?: 'section'
 }
 
 export interface ContentBullet {
@@ -47,6 +61,13 @@ export interface ContentStep extends DemoStepBase {
   bullets?: ContentBullet[]
   callout?: Callout
   sourceUrl?: string
+  /**
+   * Layout variant: `split` puts the body left and cards right in two
+   * columns; `stats` renders each card as a big-number tile (title = the
+   * figure, description = its label); `quote` renders the body as an
+   * oversized pull quote.
+   */
+  variant?: 'split' | 'stats' | 'quote'
 }
 
 export interface DiscussionStep extends DemoStepBase {

@@ -23,7 +23,7 @@ export function DiscussionStepView({ step }: { step: DiscussionStep }) {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.4 }}
-        className="relative z-10 max-w-2xl text-3xl font-semibold text-balance text-slate-100"
+        className="relative z-10 max-w-3xl text-4xl font-semibold leading-tight text-balance text-slate-100"
       >
         {step.prompt}
       </motion.p>
@@ -32,11 +32,11 @@ export function DiscussionStepView({ step }: { step: DiscussionStep }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.25 }}
-          className="relative z-10 mt-8 space-y-2 text-left"
+          className="relative z-10 mt-9 max-w-2xl space-y-2.5 text-left"
         >
           {talkingPoints.map((tp) => (
-            <li key={tp} className="flex items-start gap-2 text-sm text-slate-400">
-              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-cyan-400" />
+            <li key={tp} className="flex items-start gap-2.5 text-lg text-slate-300">
+              <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-400" />
               <span>{tp}</span>
             </li>
           ))}

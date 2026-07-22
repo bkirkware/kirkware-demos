@@ -25,7 +25,7 @@ export function QuestionStepView({ step }: { step: QuestionStep }) {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.4 }}
-        className="relative z-10 max-w-2xl text-3xl font-semibold text-balance text-slate-100"
+        className="relative z-10 max-w-3xl text-4xl font-semibold leading-tight text-balance text-slate-100"
       >
         {step.prompt}
       </motion.p>
@@ -46,8 +46,8 @@ export function QuestionStepView({ step }: { step: QuestionStep }) {
               className="mt-4 space-y-2 text-left"
             >
               {hints.map((h) => (
-                <li key={h} className="flex items-start gap-2 text-sm text-slate-500">
-                  <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />
+                <li key={h} className="flex items-start gap-2.5 text-base text-slate-400">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
                   <span>{h}</span>
                 </li>
               ))}

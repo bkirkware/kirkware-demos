@@ -301,10 +301,10 @@ function parseFenceInfo(file: string, line: number, info: string): { lang: strin
 
 const CALLOUT_TONES = ['info', 'success', 'warning'] as const
 
-/** Props keys accepted per step type (in addition to `id` and `title`). */
+/** Props keys accepted per step type (in addition to `id`, `title`, `links`). */
 const ALLOWED_PROPS: Record<StepType, readonly string[]> = {
-  title: ['eyebrow', 'heading', 'subheading', 'bullets'],
-  content: ['heading', 'body', 'bullets', 'callout', 'source'],
+  title: ['eyebrow', 'heading', 'subheading', 'bullets', 'variant'],
+  content: ['heading', 'body', 'bullets', 'callout', 'source', 'variant'],
   discussion: ['prompt', 'talkingPoints'],
   question: ['prompt', 'hints'],
   command: ['heading', 'description', 'commands', 'impact', 'source'],
@@ -326,6 +326,12 @@ const ALLOWED_PROPS: Record<StepType, readonly string[]> = {
 
 /** Fields where the `source:` prop key maps onto the typed `sourceUrl`. */
 const SOURCEABLE: readonly StepType[] = ['content', 'command', 'diagram']
+
+/** Legal `variant:` values per step type (see src/types/demo.ts). */
+const VARIANTS: Partial<Record<StepType, readonly string[]>> = {
+  title: ['section'],
+  content: ['split', 'stats', 'quote'],
+}
 
 function mapStep(file: string, raw: RawStep): ParsedStep {
   const { type } = raw
@@ -439,8 +445,28 @@ function mapStep(file: string, raw: RawStep): ParsedStep {
       if (typeof value !== 'string' || !value.trim()) throw new ContentError(file, raw.line, `\`${key}\` must be a non-empty string`)
       continue
     }
+    if (key === 'links') {
+      if (
+        !Array.isArray(value) ||
+        value.some(
+          (l) => l == null || typeof l !== 'object' || typeof (l as Record<string, unknown>)['label'] !== 'string' || typeof (l as Record<string, unknown>)['url'] !== 'string',
+        )
+      ) {
+        throw new ContentError(file, raw.line, '`links` must be a list of { label, url } entries')
+      }
+      fields['links'] = value
+      continue
+    }
     if (!allowed.includes(key)) {
-      throw new ContentError(file, raw.line, `unknown prop \`${key}\` for a ${type} step — supported: id, title, ${allowed.join(', ')}`)
+      throw new ContentError(file, raw.line, `unknown prop \`${key}\` for a ${type} step — supported: id, title, links, ${allowed.join(', ')}`)
+    }
+    if (key === 'variant') {
+      const legal = VARIANTS[type] ?? []
+      if (typeof value !== 'string' || !legal.includes(value)) {
+        throw new ContentError(file, raw.line, `\`variant\` for a ${type} step must be one of: ${legal.join(', ')}`)
+      }
+      fields['variant'] = value
+      continue
     }
     if (key === 'source') {
       fields['sourceUrl'] = value

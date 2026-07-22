@@ -105,7 +105,7 @@ export function CodeBlock({ block }: { block: CommandBlock }) {
   return (
     <div className="overflow-hidden rounded-xl border border-white/10 bg-[#0a0d16] shadow-lg shadow-black/30">
       <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-4 py-2">
-        <div className="flex items-center gap-2 text-xs text-slate-400">
+        <div className="flex items-center gap-2 text-[13px] text-slate-400">
           <Terminal size={13} />
           <span className="font-mono">{block.label ?? block.lang}</span>
         </div>
@@ -142,7 +142,7 @@ export function CodeBlock({ block }: { block: CommandBlock }) {
       <Highlight theme={themes.nightOwl} code={block.code.trim()} language={block.lang as never}>
         {({ className, style, tokens, getLineProps, getTokenProps }) => (
           <pre
-            className={`${className} overflow-x-auto px-4 py-3 text-[13px] leading-relaxed`}
+            className={`${className} overflow-x-auto px-4 py-3.5 text-[15px] leading-relaxed`}
             style={{ ...style, background: 'transparent' }}
           >
             {tokens.map((line, i) => {
@@ -190,7 +190,7 @@ export function CodeBlock({ block }: { block: CommandBlock }) {
             <div className="flex items-center gap-1.5 px-4 pt-2.5 text-[10px] font-medium tracking-wide text-slate-500 uppercase">
               Simulated output
             </div>
-            <div className="px-4 py-2.5 font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap text-emerald-300/90">
+            <div className="px-4 py-2.5 font-mono text-[14px] leading-relaxed whitespace-pre-wrap text-emerald-300/90">
               {block.output}
             </div>
           </motion.div>
@@ -209,9 +209,9 @@ export function CodeBlock({ block }: { block: CommandBlock }) {
             <div className="flex items-center gap-1.5 px-4 pt-2.5 text-[10px] font-medium tracking-wide text-amber-400/80 uppercase">
               <Zap size={11} /> Live output — ran on your machine
             </div>
-            {liveError && <div className="px-4 py-2.5 font-mono text-[12.5px] text-rose-300/90">{liveError}</div>}
+            {liveError && <div className="px-4 py-2.5 font-mono text-[14px] text-rose-300/90">{liveError}</div>}
             {liveResult && (
-              <div className="px-4 py-2.5 font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap">
+              <div className="px-4 py-2.5 font-mono text-[14px] leading-relaxed whitespace-pre-wrap">
                 {liveResult.stdout && <div className="text-slate-200">{liveResult.stdout}</div>}
                 {liveResult.stderr && <div className="text-rose-300/90">{liveResult.stderr}</div>}
                 {liveResult.timedOut && <div className="text-rose-300/90">Command timed out.</div>}
