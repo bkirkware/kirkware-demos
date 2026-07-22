@@ -275,16 +275,22 @@ function parseYamlBlock(file: string, startLine: number, text: string): Record<s
 
 function parseFenceInfo(file: string, line: number, info: string): { lang: string; attrs: Record<string, string> } {
   if (info === '') throw new ContentError(file, line, 'code fences need a language, e.g. ```bash (or ```output for simulated output)')
-  const [lang, ...rest] = info.split(/\s+/)
+  const spaceAt = info.search(/\s/)
+  const lang = spaceAt === -1 ? info : info.slice(0, spaceAt)
+  let rest = spaceAt === -1 ? '' : info.slice(spaceAt)
   const attrs: Record<string, string> = {}
-  for (const token of rest) {
-    const m = /^([a-z]+)=(?:"([^"]*)"|(\S+))$/.exec(token)
-    if (!m) throw new ContentError(file, line, `malformed fence attribute "${token}" — expected key=value`)
+  // key=value attributes; values with spaces are double-quoted.
+  const attrRe = /^\s+([a-z]+)=(?:"([^"]*)"|(\S+))/
+  for (;;) {
+    if (rest.trim() === '') break
+    const m = attrRe.exec(rest)
+    if (!m) throw new ContentError(file, line, `malformed fence attributes "${rest.trim()}" — expected key=value or key="quoted value"`)
     const key = m[1]
     if (key !== 'label' && key !== 'live') {
       throw new ContentError(file, line, `unknown fence attribute "${key}" — supported: label=, live=`)
     }
     attrs[key] = m[2] ?? m[3]
+    rest = rest.slice(m[0].length)
   }
   return { lang, attrs }
 }

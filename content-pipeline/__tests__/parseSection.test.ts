@@ -103,6 +103,11 @@ describe('parseSection', () => {
     })
   })
 
+  it('supports double-quoted fence attribute values containing spaces', () => {
+    const { steps } = parseSection('f.md', wrap('## command: R\n### H\n```bash label="Chat (openai wire format)" live=env-check.sh\nx\n```'))
+    expect(steps[0].fields['commands']).toMatchObject([{ label: 'Chat (openai wire format)', liveId: 'env-check.sh' }])
+  })
+
   it('rejects an output fence with no preceding command fence', () => {
     expect(() => parseSection('f.md', wrap('## command: R\n### H\n```output\nx\n```'))).toThrow(/directly follow/)
   })
