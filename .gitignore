@@ -29,4 +29,7 @@ tmp/*
 # Python (apps/presidio-content-filter)
 __pycache__/
 *.pyc
-.venv/screenshots/
+.venv/
+
+# Step-walk render baselines (scripts/screenshot-steps.ts)
+screenshots/
